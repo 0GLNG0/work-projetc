@@ -1,6 +1,6 @@
-FROM php:8.2-cli
+FROM php:8.3-cli
 
-# Install system dependencies + GD
+# Install dependencies + GD + MySQL PDO
 RUN apt-get update && apt-get install -y \
     git unzip libpng-dev libjpeg-dev libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -9,14 +9,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Copy project
 COPY . .
 
-# Install composer
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Install Laravel dependencies
 RUN composer install --optimize-autoloader --no-dev --no-interaction
 
-# Generate caches
+# Cache (biar lebih cepat)
 RUN php artisan config:cache || true
 RUN php artisan route:cache || true
 RUN php artisan view:cache || true
