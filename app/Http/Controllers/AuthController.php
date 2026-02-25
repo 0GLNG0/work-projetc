@@ -22,7 +22,7 @@ class AuthController extends Controller
         // Credentials sederhana (bisa diganti dengan database)
         if ($request->username === 'admin' && $request->password === 'admin123') {
             session(['admin_logged_in' => true]);
-            return redirect()->route('admin.dashboard')
+            return redirect()->route('admin.readings.gabungan')
                 ->with('success', 'Login berhasil!');
         }
 

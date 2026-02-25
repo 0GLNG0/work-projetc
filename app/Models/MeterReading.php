@@ -46,21 +46,50 @@ class MeterReading extends Model
     public static $lokasiOptions = [
         'Barat Sungai' => [
             'kuwak1' => 'Kuwak 1',
-            'pesantren' => 'Pesantren',
+            'kuwak2' => 'Kuwak 2',
+            'kuwak3' => 'Kuwak 3',
             'tosaren' => 'Tosaren',
-            'kleco' => 'Kleco',
             'ngronggo' => 'Ngronggo',
+            'kleco' => 'Kleco',
+            'balowerti' => 'Balowerti',
+            'rusunawa' => 'Rusunawa',
+            'balai kota' => 'Balai Kota',
         ],
         'Timur Sungai' => [
-            'tamanan' => 'Tamanan',
+            'gayam' => 'Gayam',
+            'ngampel' => 'Ngampel',
+            'sukorame' => 'Sukorame',
+            'pojok' => 'Pojok',
+            'bnn' => 'BNN',
+            'unik' => 'Unik',
+            'goa barong' => 'Goa Barong',
             'wilis utara' => 'Wilis Utara',
             'wilis selatan' => 'Wilis Selatan',
-            'unik' => 'Unik',
-            'pojok' => 'Pojok',
-            'sukorame' => 'Sukorame',
-            'gayam' => 'Gayam',
+            'tamanan1' => 'Tamanan1',
+            'tamanan2' => 'Tamanan2',
         ]
     ];
+
+    public static $petugasPerLokasi = [
+                'kuwak1' => ['Udin', 'Adi', 'Arif', 'Slamet'],
+                'pesantren' => ['Udin', 'Adi', 'Arif', 'Slamet'],
+                'tosaren' => ['Udin', 'Adi', 'Arif', 'Slamet'],
+                'kleco' => ['Udin', 'Adi', 'Arif', 'Slamet'],
+                'ngronggo' => ['Udin', 'Adi', 'Arif', 'Slamet'],
+                'tamanan' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'wilis utara' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'wilis selatan' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'unik' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'pojok' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'sukorame' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'gayam' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+            ];
+            
+            // Method untuk ambil petugas berdasarkan lokasi
+            public static function getPetugasByLokasi($lokasi)
+            {
+                return self::$petugasPerLokasi[$lokasi] ?? [];
+            }
 
     // Ambil data pembacaan terakhir untuk lokasi yang sama
     public static function getPreviousReading($lokasi)
@@ -86,6 +115,7 @@ class MeterReading extends Model
     public function getNamaLokasiAttribute()
     {
         foreach (self::$lokasiOptions as $group => $options) {
+            
             if (isset($options[$this->lokasi])) {
                 return $options[$this->lokasi];
             }
@@ -103,4 +133,7 @@ class MeterReading extends Model
         }
         return 'Lainnya';
     }
+
+    // Daftar petugas per lokasi
+// Daftar petugas per lokasi (bisa ditambah/diedit)
 }

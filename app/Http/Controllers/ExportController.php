@@ -3,12 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\MeterReading;
+use App\Models\MeterAir;
+use App\Models\MeterListrik;
+use App\Exports\MeterAirExport;
+use App\Exports\MeterListrikExport;
+use App\Exports\MeterReadingsExport;
+use App\Exports\MonthlyReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use setasign\Fpdf\Fpdf;
 
 class ExportController extends Controller
 {
-    // ==================== PREVIEW HTML ====================
+    // ==================== PREVIEW HTML (Menggunakan Model Lama) ====================
     public function previewHarian(Request $request)
     {
         $tanggal = $request->tanggal ?? date('Y-m-d');
@@ -51,7 +58,6 @@ class ExportController extends Controller
     {
         $query = MeterReading::query();
         
-        // Apply filters
         if ($request->filled('lokasi')) {
             $query->where('lokasi', $request->lokasi);
         }
@@ -70,7 +76,7 @@ class ExportController extends Controller
         return view('exports.preview-semua', compact('readings', 'request'));
     }
     
-    // ==================== PREVIEW PDF DI BROWSER (TANPA DOWNLOAD) ====================
+    // ==================== PREVIEW PDF (Model Lama) ====================
     public function previewPdfHarian(Request $request)
     {
         $tanggal = $request->tanggal ?? date('Y-m-d');
@@ -81,7 +87,6 @@ class ExportController extends Controller
         
         $pdf = $this->generatePdfHarian($readings, $tanggal);
         
-        // I = Inline (tampil di browser), bukan D = Download
         return response($pdf->Output('I', 'preview_harian_' . $tanggal . '.pdf'))
             ->header('Content-Type', 'application/pdf');
     }
@@ -125,185 +130,7 @@ class ExportController extends Controller
             ->header('Content-Type', 'application/pdf');
     }
     
-    // ==================== GENERATE PDF (PRIVATE METHODS) ====================
-    
-    private function generatePdfHarian($readings, $tanggal)
-    {
-        $pdf = new \FPDF();
-        $pdf->AddPage('L', 'A4');
-        
-        // Header
-        $pdf->SetFont('Arial', 'B', 16);
-        $pdf->Cell(0, 10, 'LAPORAN HARIAN PEMBACAAN METER', 0, 1, 'C');
-        $pdf->SetFont('Arial', '', 12);
-        $pdf->Cell(0, 8, 'Tanggal: ' . date('d/m/Y', strtotime($tanggal)), 0, 1, 'C');
-        $pdf->Ln(5);
-        
-        // Tabel Header
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->SetFillColor(200, 220, 255);
-        
-        $w = [25, 50, 25, 30, 25, 30, 25, 30, 25];
-        
-        $pdf->Cell($w[0], 10, 'No', 1, 0, 'C', true);
-        $pdf->Cell($w[1], 10, 'Lokasi', 1, 0, 'C', true);
-        $pdf->Cell($w[2], 10, 'Jam', 1, 0, 'C', true);
-        $pdf->Cell($w[3], 10, 'Meter Air', 1, 0, 'C', true);
-        $pdf->Cell($w[4], 10, 'Pakai Air', 1, 0, 'C', true);
-        $pdf->Cell($w[5], 10, 'Meter Listrik', 1, 0, 'C', true);
-        $pdf->Cell($w[6], 10, 'Pakai Listrik', 1, 0, 'C', true);
-        $pdf->Cell($w[7], 10, 'Status', 1, 0, 'C', true);
-        $pdf->Cell($w[8], 10, 'Petugas', 1, 1, 'C', true);
-        
-        // Data
-        $pdf->SetFont('Arial', '', 9);
-        $no = 1;
-        foreach ($readings as $reading) {
-            $pdf->Cell($w[0], 8, $no++, 1, 0, 'C');
-            $pdf->Cell($w[1], 8, $reading->nama_lokasi, 1);
-            $pdf->Cell($w[2], 8, $reading->jam, 1, 0, 'C');
-            $pdf->Cell($w[3], 8, $reading->meter_air ? number_format($reading->meter_air, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[4], 8, $reading->pemakaian_air ? number_format($reading->pemakaian_air, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[5], 8, $reading->meter_listrik ? number_format($reading->meter_listrik, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[6], 8, $reading->pemakaian_listrik ? number_format($reading->pemakaian_listrik, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[7], 8, $reading->status_meter ?? '-', 1, 0, 'C');
-            $pdf->Cell($w[8], 8, $reading->petugas ?? '-', 1, 1);
-        }
-        
-        // Footer Total
-        $pdf->Ln(5);
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(0, 8, 'Total Data: ' . $readings->count() . ' records', 0, 1);
-        
-        return $pdf;
-    }
-    
-    private function generatePdfBulanan($readings, $bulan, $tahun)
-    {
-        $pdf = new \FPDF();
-        $pdf->AddPage('L', 'A4');
-        
-        // Header
-        $pdf->SetFont('Arial', 'B', 16);
-        $pdf->Cell(0, 10, 'LAPORAN BULANAN PEMBACAAN METER', 0, 1, 'C');
-        $pdf->SetFont('Arial', '', 12);
-        $bulanTeks = date('F Y', strtotime("$tahun-$bulan-01"));
-        $pdf->Cell(0, 8, 'Bulan: ' . $bulanTeks, 0, 1, 'C');
-        $pdf->Ln(5);
-        
-        // Group by lokasi
-        $dataPerLokasi = [];
-        foreach ($readings as $reading) {
-            $dataPerLokasi[$reading->lokasi][] = $reading;
-        }
-        
-        foreach ($dataPerLokasi as $lokasi => $dataLokasi) {
-            $namaLokasi = $dataLokasi[0]->nama_lokasi;
-            
-            $pdf->SetFont('Arial', 'B', 11);
-            $pdf->SetFillColor(230, 240, 255);
-            $pdf->Cell(0, 10, 'Lokasi: ' . $namaLokasi, 1, 1, 'L', true);
-            
-            // Tabel
-            $w = [15, 30, 35, 25, 35, 25, 30];
-            
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->SetFillColor(200, 220, 255);
-            $pdf->Cell($w[0], 8, 'No', 1, 0, 'C', true);
-            $pdf->Cell($w[1], 8, 'Tanggal', 1, 0, 'C', true);
-            $pdf->Cell($w[2], 8, 'Meter Air', 1, 0, 'C', true);
-            $pdf->Cell($w[3], 8, 'Pakai Air', 1, 0, 'C', true);
-            $pdf->Cell($w[4], 8, 'Meter Listrik', 1, 0, 'C', true);
-            $pdf->Cell($w[5], 8, 'Pakai Listrik', 1, 0, 'C', true);
-            $pdf->Cell($w[6], 8, 'Keterangan', 1, 1, 'C', true);
-            
-            $pdf->SetFont('Arial', '', 9);
-            $no = 1;
-            $totalAir = 0;
-            $totalListrik = 0;
-            
-            foreach ($dataLokasi as $reading) {
-                $pdf->Cell($w[0], 7, $no++, 1, 0, 'C');
-                $pdf->Cell($w[1], 7, $reading->tanggal->format('d/m/Y'), 1, 0, 'C');
-                $pdf->Cell($w[2], 7, number_format($reading->meter_air, 2), 1, 0, 'R');
-                $pdf->Cell($w[3], 7, $reading->pemakaian_air ? number_format($reading->pemakaian_air, 2) : '-', 1, 0, 'R');
-                $pdf->Cell($w[4], 7, number_format($reading->meter_listrik, 2), 1, 0, 'R');
-                $pdf->Cell($w[5], 7, $reading->pemakaian_listrik ? number_format($reading->pemakaian_listrik, 2) : '-', 1, 0, 'R');
-                $pdf->Cell($w[6], 7, $reading->keterangan ? substr($reading->keterangan, 0, 15) : '-', 1, 1);
-                
-                if ($reading->pemakaian_air) $totalAir += $reading->pemakaian_air;
-                if ($reading->pemakaian_listrik) $totalListrik += $reading->pemakaian_listrik;
-            }
-            
-            // Total per lokasi
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->SetFillColor(230, 240, 255);
-            $pdf->Cell($w[0] + $w[1] + $w[2], 7, 'TOTAL', 1, 0, 'R', true);
-            $pdf->Cell($w[3], 7, number_format($totalAir, 2) . ' m³', 1, 0, 'R', true);
-            $pdf->Cell($w[4] + $w[5], 7, number_format($totalListrik, 2) . ' kWh', 1, 0, 'R', true);
-            $pdf->Cell($w[6], 7, '', 1, 1, 'R', true);
-            
-            $pdf->Ln(3);
-        }
-        
-        return $pdf;
-    }
-    
-    private function generatePdfSemua($readings, $request)
-    {
-        $pdf = new \FPDF();
-        $pdf->AddPage('L', 'A4');
-        
-        // Header
-        $pdf->SetFont('Arial', 'B', 16);
-        $pdf->Cell(0, 10, 'LAPORAN SEMUA DATA', 0, 1, 'C');
-        $pdf->SetFont('Arial', '', 10);
-        
-        // Filter info
-        $filterInfo = [];
-        if ($request->filled('lokasi')) $filterInfo[] = 'Lokasi: ' . $request->lokasi;
-        if ($request->filled('tanggal_mulai')) $filterInfo[] = 'Dari: ' . $request->tanggal_mulai;
-        if ($request->filled('tanggal_selesai')) $filterInfo[] = 'Sampai: ' . $request->tanggal_selesai;
-        
-        if (!empty($filterInfo)) {
-            $pdf->Cell(0, 8, 'Filter: ' . implode(' | ', $filterInfo), 0, 1);
-        }
-        $pdf->Ln(5);
-        
-        // Tabel Header
-        $w = [10, 40, 20, 25, 20, 25, 20, 25, 25];
-        
-        $pdf->SetFont('Arial', 'B', 9);
-        $pdf->SetFillColor(200, 220, 255);
-        $pdf->Cell($w[0], 8, 'No', 1, 0, 'C', true);
-        $pdf->Cell($w[1], 8, 'Lokasi', 1, 0, 'C', true);
-        $pdf->Cell($w[2], 8, 'Tanggal', 1, 0, 'C', true);
-        $pdf->Cell($w[3], 8, 'Meter Air', 1, 0, 'C', true);
-        $pdf->Cell($w[4], 8, 'Pakai Air', 1, 0, 'C', true);
-        $pdf->Cell($w[5], 8, 'Meter Listrik', 1, 0, 'C', true);
-        $pdf->Cell($w[6], 8, 'Pakai Listrik', 1, 0, 'C', true);
-        $pdf->Cell($w[7], 8, 'Status', 1, 0, 'C', true);
-        $pdf->Cell($w[8], 8, 'Petugas', 1, 1, 'C', true);
-        
-        // Data
-        $pdf->SetFont('Arial', '', 8);
-        $no = 1;
-        foreach ($readings as $reading) {
-            $pdf->Cell($w[0], 7, $no++, 1, 0, 'C');
-            $pdf->Cell($w[1], 7, $reading->nama_lokasi, 1);
-            $pdf->Cell($w[2], 7, $reading->tanggal->format('d/m/Y'), 1, 0, 'C');
-            $pdf->Cell($w[3], 7, $reading->meter_air ? number_format($reading->meter_air, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[4], 7, $reading->pemakaian_air ? number_format($reading->pemakaian_air, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[5], 7, $reading->meter_listrik ? number_format($reading->meter_listrik, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[6], 7, $reading->pemakaian_listrik ? number_format($reading->pemakaian_listrik, 2) : '-', 1, 0, 'R');
-            $pdf->Cell($w[7], 7, $reading->status_meter ?? '-', 1, 0, 'C');
-            $pdf->Cell($w[8], 7, $reading->petugas ?? '-', 1, 1);
-        }
-        
-        return $pdf;
-    }
-    
-    // ==================== DOWNLOAD PDF (TETAP ADA) ====================
+    // ==================== DOWNLOAD PDF (Model Lama) ====================
     public function pdfHarian(Request $request)
     {
         $tanggal = $request->tanggal ?? date('Y-m-d');
@@ -318,7 +145,11 @@ class ExportController extends Controller
     {
         $bulan = $request->bulan ?? date('m');
         $tahun = $request->tahun ?? date('Y');
-        $readings = MeterReading::whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulan)->orderBy('lokasi')->orderBy('tanggal')->get();
+        $readings = MeterReading::whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->orderBy('lokasi')
+            ->orderBy('tanggal')
+            ->get();
         $pdf = $this->generatePdfBulanan($readings, $bulan, $tahun);
         
         return response($pdf->Output('D', 'laporan_bulanan_' . $tahun . '_' . $bulan . '.pdf'))
@@ -337,5 +168,494 @@ class ExportController extends Controller
         
         return response($pdf->Output('D', 'laporan_semua_data.pdf'))
             ->header('Content-Type', 'application/pdf');
+    }
+
+    // ==================== EXPORT EXCEL (Model Lama) ====================
+    public function excelSemua(Request $request)
+    {
+        $fileName = 'data_meter_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MeterReadingsExport($request), $fileName);
+    }
+
+    public function excelHarian(Request $request)
+    {
+        $tanggal = $request->tanggal ?? date('Y-m-d');
+        $fileName = 'laporan_harian_' . $tanggal . '.xlsx';
+        
+        $filterRequest = new Request([
+            'tanggal_mulai' => $tanggal,
+            'tanggal_selesai' => $tanggal,
+            'lokasi' => $request->lokasi,
+            'status_meter' => $request->status_meter,
+        ]);
+        
+        return Excel::download(new MeterReadingsExport($filterRequest), $fileName);
+    }
+
+    public function excelBulanan(Request $request)
+    {
+        $bulan = $request->bulan ?? date('m');
+        $tahun = $request->tahun ?? date('Y');
+        
+        $tanggalMulai = "$tahun-$bulan-01";
+        $tanggalSelesai = date('Y-m-t', strtotime($tanggalMulai));
+        
+        $fileName = 'laporan_bulanan_' . $tahun . '_' . $bulan . '.xlsx';
+        
+        $filterRequest = new Request([
+            'tanggal_mulai' => $tanggalMulai,
+            'tanggal_selesai' => $tanggalSelesai,
+        ]);
+        
+        return Excel::download(new MeterReadingsExport($filterRequest), $fileName);
+    }
+
+    public function excelTahunan(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+        $fileName = 'laporan_tahunan_' . $tahun . '.xlsx';
+        
+        $filterRequest = new Request([
+            'tanggal_mulai' => $tahun . '-01-01',
+            'tanggal_selesai' => $tahun . '-12-31',
+        ]);
+        
+        return Excel::download(new MeterReadingsExport($filterRequest), $fileName);
+    }
+
+
+    // ==================== EXPORT AIR (Model Baru) ====================
+    
+    /**
+     * GET LOKASI BERDASARKAN WILAYAH
+     */
+    private function getLokasiByWilayah($wilayah)
+    {
+        $lokasiOptions = MeterAir::$lokasiOptions;
+        
+        if ($wilayah == 'barat') {
+            return array_keys($lokasiOptions['Barat Sungai']);
+        } elseif ($wilayah == 'timur') {
+            return array_keys($lokasiOptions['Timur Sungai']);
+        } else {
+            $all = [];
+            foreach ($lokasiOptions as $group) {
+                $all = array_merge($all, array_keys($group));
+            }
+            return $all;
+        }
+    }
+
+    // ==================== GENERATE FILENAME ====================
+    private function generateFilename($jenis, $request)
+    {
+        $wilayah = $request->wilayah ?? 'semua';
+        $periode = '';
+        
+        if ($request->filled('tanggal')) {
+            $periode = '_' . $request->tanggal;
+        } elseif ($request->filled('tanggal_mulai')) {
+            $periode = '_' . $request->tanggal_mulai . '_to_' . $request->tanggal_selesai;
+        } elseif ($request->filled('bulan')) {
+            $periode = '_' . $request->tahun . '_' . $request->bulan;
+        } elseif ($request->filled('tahun')) {
+            $periode = '_' . $request->tahun;
+        }
+        
+        return $jenis . '_' . $wilayah . $periode;
+    }
+
+    // ==================== EXPORT EXCEL AIR ====================
+   public function excelAir(Request $request)
+{
+    // 1. MULAI QUERY KE DATABASE
+    $query = MeterAir::query();
+    
+    // 2. FILTER LOKASI / WILAYAH
+    $lokasiList = $this->getLokasiByWilayah($request->wilayah ?? 'semua');
+    $query->whereIn('lokasi', $lokasiList);
+    
+    // 3. FILTER PERIODE
+    if ($request->filled('tanggal')) {
+        $query->whereDate('tanggal', $request->tanggal);
+    } elseif ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+        $query->whereBetween('tanggal', [$request->tanggal_mulai, $request->tanggal_selesai]);
+    } elseif ($request->filled('bulan') && $request->filled('tahun')) {
+        $query->whereYear('tanggal', $request->tahun)
+              ->whereMonth('tanggal', $request->bulan);
+    } elseif ($request->filled('tahun')) {
+        $query->whereYear('tanggal', $request->tahun);
+    }
+    
+    // 4. EKSEKUSI PENGAMBILAN DATA (Jadinya "Collection")
+    $readings = $query->orderBy('tanggal', 'desc')->get();
+    
+    // 5. BUAT NAMA FILE
+    $filename = $this->generateFilename('air', $request);
+
+    // 6. LEMPAR DATA KE EXPORT (Pakai $readings, BUKAN $request)
+    return Excel::download(new MeterAirExport($readings), $filename . '.xlsx');
+}
+
+
+   public function excelAirHarian(Request $request)
+{
+    $tanggal = $request->tanggal ?? date('Y-m-d');
+    // Gunakan merge, bukan langsung assign
+    $newRequest = new Request($request->all());
+    $newRequest->merge(['tanggal' => $tanggal]);
+    return $this->excelAir($newRequest);
+}
+
+public function excelAirMingguan(Request $request)
+{
+    $newRequest = new Request($request->all());
+    
+    if (!$newRequest->filled('tanggal_mulai')) {
+        $newRequest->merge(['tanggal_mulai' => date('Y-m-d', strtotime('-7 days'))]);
+    }
+    if (!$newRequest->filled('tanggal_selesai')) {
+        $newRequest->merge(['tanggal_selesai' => date('Y-m-d')]);
+    }
+    
+    return $this->excelAir($newRequest);
+}
+
+public function excelAirBulanan(Request $request)
+{
+    $bulan = $request->bulan ?? date('m');
+    $tahun = $request->tahun ?? date('Y');
+    
+    $newRequest = new Request($request->all());
+    $newRequest->merge(['bulan' => $bulan, 'tahun' => $tahun]);
+    
+    return $this->excelAir($newRequest);
+}
+
+public function excelAirTahunan(Request $request)
+{
+    $tahun = $request->tahun ?? date('Y');
+    
+    $newRequest = new Request($request->all());
+    $newRequest->merge(['tahun' => $tahun]);
+    
+    return $this->excelAir($newRequest);
+}
+
+    // ==================== EXPORT PDF AIR ====================
+    public function pdfAir(Request $request)
+    {
+        $query = MeterAir::query();
+        
+        // Filter wilayah
+        $lokasiList = $this->getLokasiByWilayah($request->wilayah ?? 'semua');
+        $query->whereIn('lokasi', $lokasiList);
+        
+        // Filter periode
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal', $request->tanggal);
+        }
+        
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tanggal', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+        
+        if ($request->filled('bulan') && $request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun)
+                  ->whereMonth('tanggal', $request->bulan);
+        }
+        
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun);
+        }
+        
+        $readings = $query->orderBy('tanggal', 'desc')->get();
+        $pdf = $this->generatePdfAir($readings, $request);
+        $filename = $this->generateFilename('air', $request);
+        
+        return response($pdf->Output('D', $filename . '.pdf'))
+            ->header('Content-Type', 'application/pdf');
+    }
+
+    public function pdfAirHarian(Request $request)
+    {
+        $tanggal = $request->tanggal ?? date('Y-m-d');
+        $request->merge(['tanggal' => $tanggal]);
+        return $this->pdfAir($request);
+    }
+
+    public function pdfAirMingguan(Request $request)
+    {
+        if (!$request->filled('tanggal_mulai')) {
+            $request->merge(['tanggal_mulai' => date('Y-m-d', strtotime('-7 days'))]);
+        }
+        if (!$request->filled('tanggal_selesai')) {
+            $request->merge(['tanggal_selesai' => date('Y-m-d')]);
+        }
+        return $this->pdfAir($request);
+    }
+
+    public function pdfAirBulanan(Request $request)
+    {
+        $bulan = $request->bulan ?? date('m');
+        $tahun = $request->tahun ?? date('Y');
+        $request->merge(['bulan' => $bulan, 'tahun' => $tahun]);
+        return $this->pdfAir($request);
+    }
+
+    public function pdfAirTahunan(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+        $request->merge(['tahun' => $tahun]);
+        return $this->pdfAir($request);
+    }
+
+    // ==================== EXPORT EXCEL LISTRIK ====================
+   public function excelListrik(Request $request)
+{
+    $query = MeterListrik::query();
+    
+    // Filter wilayah
+    $lokasiList = $this->getLokasiByWilayah($request->wilayah ?? 'semua');
+    $query->whereIn('lokasi', $lokasiList);
+    
+    // Filter periode
+    if ($request->filled('tanggal')) {
+        $query->whereDate('tanggal', $request->tanggal);
+    } elseif ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+        $query->whereBetween('tanggal', [$request->tanggal_mulai, $request->tanggal_selesai]);
+    } elseif ($request->filled('bulan') && $request->filled('tahun')) {
+        $query->whereYear('tanggal', $request->tahun)
+              ->whereMonth('tanggal', $request->bulan);
+    } elseif ($request->filled('tahun')) {
+        $query->whereYear('tanggal', $request->tahun);
+    }
+    
+    // AMBIL DATANYA (Collection)
+    $readings = $query->orderBy('tanggal', 'desc')->get();
+    
+    $filename = $this->generateFilename('listrik', $request);
+    
+    // KIRIM $readings KE EXPORT CLASS
+    return Excel::download(new MeterListrikExport($readings), $filename . '.xlsx');
+}
+
+    public function excelListrikHarian(Request $request)
+    {
+        $tanggal = $request->tanggal ?? date('Y-m-d');
+        $request->merge(['tanggal' => $tanggal]);
+        return $this->excelListrik($request);
+    }
+
+    public function excelListrikMingguan(Request $request)
+    {
+        if (!$request->filled('tanggal_mulai')) {
+            $request->merge(['tanggal_mulai' => date('Y-m-d', strtotime('-7 days'))]);
+        }
+        if (!$request->filled('tanggal_selesai')) {
+            $request->merge(['tanggal_selesai' => date('Y-m-d')]);
+        }
+        return $this->excelListrik($request);
+    }
+
+    public function excelListrikBulanan(Request $request)
+    {
+        $bulan = $request->bulan ?? date('m');
+        $tahun = $request->tahun ?? date('Y');
+        $request->merge(['bulan' => $bulan, 'tahun' => $tahun]);
+        return $this->excelListrik($request);
+    }
+
+    public function excelListrikTahunan(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+        $request->merge(['tahun' => $tahun]);
+        return $this->excelListrik($request);
+    }
+
+    // ==================== EXPORT PDF LISTRIK ====================
+    public function pdfListrik(Request $request)
+    {
+        $query = MeterListrik::query();
+        
+        // Filter wilayah
+        $lokasiList = $this->getLokasiByWilayah($request->wilayah ?? 'semua');
+        $query->whereIn('lokasi', $lokasiList);
+        
+        // Filter periode
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal', $request->tanggal);
+        }
+        
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tanggal', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+        
+        if ($request->filled('bulan') && $request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun)
+                  ->whereMonth('tanggal', $request->bulan);
+        }
+        
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun);
+        }
+        
+        $readings = $query->orderBy('tanggal', 'desc')->get();
+        $pdf = $this->generatePdfListrik($readings, $request);
+        $filename = $this->generateFilename('listrik', $request);
+        
+        return response($pdf->Output('D', $filename . '.pdf'))
+            ->header('Content-Type', 'application/pdf');
+    }
+
+    public function pdfListrikHarian(Request $request)
+    {
+        $tanggal = $request->tanggal ?? date('Y-m-d');
+        $request->merge(['tanggal' => $tanggal]);
+        return $this->pdfListrik($request);
+    }
+
+    public function pdfListrikMingguan(Request $request)
+    {
+        if (!$request->filled('tanggal_mulai')) {
+            $request->merge(['tanggal_mulai' => date('Y-m-d', strtotime('-7 days'))]);
+        }
+        if (!$request->filled('tanggal_selesai')) {
+            $request->merge(['tanggal_selesai' => date('Y-m-d')]);
+        }
+        return $this->pdfListrik($request);
+    }
+
+    public function pdfListrikBulanan(Request $request)
+    {
+        $bulan = $request->bulan ?? date('m');
+        $tahun = $request->tahun ?? date('Y');
+        $request->merge(['bulan' => $bulan, 'tahun' => $tahun]);
+        return $this->pdfListrik($request);
+    }
+
+    public function pdfListrikTahunan(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+        $request->merge(['tahun' => $tahun]);
+        return $this->pdfListrik($request);
+    }
+
+    // ==================== GENERATE PDF AIR ====================
+    private function generatePdfAir($readings, $request)
+    {
+        $pdf = new \FPDF('L', 'mm', 'A4');
+        $pdf->AddPage();
+        
+        // Header
+        $pdf->SetFont('Arial', 'B', 16);
+        $pdf->Cell(0, 10, 'LAPORAN METER AIR', 0, 1, 'C');
+        
+        // Info filter
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->Cell(0, 8, 'Wilayah: ' . ucfirst($request->wilayah ?? 'Semua'), 0, 1);
+        
+        if ($request->filled('tanggal')) {
+            $pdf->Cell(0, 8, 'Tanggal: ' . date('d/m/Y', strtotime($request->tanggal)), 0, 1);
+        } elseif ($request->filled('tanggal_mulai')) {
+            $pdf->Cell(0, 8, 'Periode: ' . date('d/m/Y', strtotime($request->tanggal_mulai)) . ' - ' . date('d/m/Y', strtotime($request->tanggal_selesai)), 0, 1);
+        } elseif ($request->filled('bulan')) {
+            $pdf->Cell(0, 8, 'Bulan: ' . $request->bulan . '/' . $request->tahun, 0, 1);
+        } elseif ($request->filled('tahun')) {
+            $pdf->Cell(0, 8, 'Tahun: ' . $request->tahun, 0, 1);
+        }
+        
+        $pdf->Ln(5);
+        
+        // Tabel
+        $w = [10, 40, 25, 25, 25, 30, 30, 30, 20];
+        
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->Cell($w[0], 8, 'No', 1);
+        $pdf->Cell($w[1], 8, 'Lokasi', 1);
+        $pdf->Cell($w[2], 8, 'Tanggal', 1);
+        $pdf->Cell($w[3], 8, 'Meter Awal', 1);
+        $pdf->Cell($w[4], 8, 'Meter Akhir', 1);
+        $pdf->Cell($w[5], 8, 'Pemakaian', 1);
+        $pdf->Cell($w[6], 8, 'Status', 1);
+        $pdf->Cell($w[7], 8, 'Petugas', 1);
+        $pdf->Cell($w[8], 8, 'Foto', 1);
+        $pdf->Ln();
+        
+        $pdf->SetFont('Arial', '', 8);
+        $no = 1;
+        foreach ($readings as $reading) {
+            $pdf->Cell($w[0], 6, $no++, 1);
+            $pdf->Cell($w[1], 6, $reading->nama_lokasi, 1);
+            $pdf->Cell($w[2], 6, $reading->tanggal->format('d/m/Y'), 1);
+            $pdf->Cell($w[3], 6, $reading->meter_awal ?? '-', 1);
+            $pdf->Cell($w[4], 6, number_format($reading->meter_akhir, 2), 1);
+            $pdf->Cell($w[5], 6, $reading->pemakaian ? number_format($reading->pemakaian, 2) : '-', 1);
+            $pdf->Cell($w[6], 6, $reading->status_meter ?? '-', 1);
+            $pdf->Cell($w[7], 6, $reading->petugas, 1);
+            $pdf->Cell($w[8], 6, $reading->foto ? 'Ada' : '-', 1);
+            $pdf->Ln();
+        }
+        
+        return $pdf;
+    }
+
+    // ==================== GENERATE PDF LISTRIK ====================
+    private function generatePdfListrik($readings, $request)
+    {
+        $pdf = new \FPDF('L', 'mm', 'A4');
+        $pdf->AddPage();
+        
+        // Header
+        $pdf->SetFont('Arial', 'B', 16);
+        $pdf->Cell(0, 10, 'LAPORAN METER LISTRIK', 0, 1, 'C');
+        
+        // Info filter
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->Cell(0, 8, 'Wilayah: ' . ucfirst($request->wilayah ?? 'Semua'), 0, 1);
+        
+        if ($request->filled('tanggal')) {
+            $pdf->Cell(0, 8, 'Tanggal: ' . date('d/m/Y', strtotime($request->tanggal)), 0, 1);
+        } elseif ($request->filled('tanggal_mulai')) {
+            $pdf->Cell(0, 8, 'Periode: ' . date('d/m/Y', strtotime($request->tanggal_mulai)) . ' - ' . date('d/m/Y', strtotime($request->tanggal_selesai)), 0, 1);
+        } elseif ($request->filled('bulan')) {
+            $pdf->Cell(0, 8, 'Bulan: ' . $request->bulan . '/' . $request->tahun, 0, 1);
+        } elseif ($request->filled('tahun')) {
+            $pdf->Cell(0, 8, 'Tahun: ' . $request->tahun, 0, 1);
+        }
+        
+        $pdf->Ln(5);
+        
+        // Tabel
+        $w = [10, 40, 30, 25, 25, 25, 30, 30, 20];
+        
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->Cell($w[0], 8, 'No', 1);
+        $pdf->Cell($w[1], 8, 'Lokasi', 1);
+        $pdf->Cell($w[2], 8, 'Nomor ID', 1);
+        $pdf->Cell($w[3], 8, 'Tanggal', 1);
+        $pdf->Cell($w[4], 8, 'Meter Awal', 1);
+        $pdf->Cell($w[5], 8, 'Meter Akhir', 1);
+        $pdf->Cell($w[6], 8, 'Pemakaian', 1);
+        $pdf->Cell($w[7], 8, 'Status', 1);
+        $pdf->Cell($w[8], 8, 'Petugas', 1);
+        $pdf->Ln();
+        
+        $pdf->SetFont('Arial', '', 8);
+        $no = 1;
+        foreach ($readings as $reading) {
+            $pdf->Cell($w[0], 6, $no++, 1);
+            $pdf->Cell($w[1], 6, $reading->nama_lokasi, 1);
+            $pdf->Cell($w[2], 6, $reading->nomor_id ?? '-', 1);
+            $pdf->Cell($w[3], 6, $reading->tanggal->format('d/m/Y'), 1);
+            $pdf->Cell($w[4], 6, $reading->meter_awal ?? '-', 1);
+            $pdf->Cell($w[5], 6, number_format($reading->meter_akhir, 2), 1);
+            $pdf->Cell($w[6], 6, $reading->pemakaian ? number_format($reading->pemakaian, 2) : '-', 1);
+            $pdf->Cell($w[7], 6, $reading->status_meter ?? '-', 1);
+            $pdf->Cell($w[8], 6, $reading->petugas, 1);
+            $pdf->Ln();
+        }
+        
+        return $pdf;
     }
 }

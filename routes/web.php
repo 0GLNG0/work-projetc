@@ -7,18 +7,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 
-
 // Halaman utama
 Route::get('/', [DashboardController::class, 'home'])->name('home');
-
-// Routes untuk input data
-Route::prefix('meters')->group(function () {
-    Route::get('/create', [MeterController::class, 'create'])->name('meters.create');
-    Route::post('/store', [MeterController::class, 'store'])->name('meters.store');
-    // Tambahkan route ini setelah route meters.store
-Route::get('/meters/previous/{lokasi}', [MeterController::class, 'getPreviousMeter'])
-    ->name('meters.previous');
-});
 
 // Routes untuk authentication
 Route::prefix('admin')->group(function () {
@@ -27,52 +17,91 @@ Route::prefix('admin')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
 });
 
-// Routes untuk admin dengan middleware
-Route::prefix('admin')->middleware(['admin'])->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/readings', [AdminController::class, 'readings'])->name('admin.readings');
-    Route::delete('/readings/{id}', [AdminController::class, 'destroy'])->name('admin.readings.destroy');
+// ===== ROUTES UNTUK ADMIN (DENGAN MIDDLEWARE) =====
+Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {
+    // Routes untuk Air
+    Route::get('/readings-air', [AdminController::class, 'readingsAir'])->name('readings.air');
+    Route::delete('/readings-air/{id}', [AdminController::class, 'destroyAir'])->name('readings.air.destroy');
+    
+    // Routes untuk Listrik
+    Route::get('/readings-listrik', [AdminController::class, 'readingsListrik'])->name('readings.listrik');
+    Route::delete('/readings-listrik/{id}', [AdminController::class, 'destroyListrik'])->name('readings.listrik.destroy');
+    
+    // Routes untuk Gabungan
+    Route::get('/readings-gabungan', [AdminController::class, 'readingsGabungan'])->name('readings.gabungan');
+    
+    // Redirect /readings ke gabungan
+    Route::get('/readings', function() {
+        return redirect()->route('admin.readings.gabungan');
+    })->name('readings');
 });
 
-Route::prefix('export')->name('export.')->group(function () {
-    Route::get('/pdf-harian', [ExportController::class, 'pdfHarian'])->name('pdf.harian');
-    Route::get('/pdf-bulanan', [ExportController::class, 'pdfBulanan'])->name('pdf.bulanan');
-    Route::get('/pdf-semua', [ExportController::class, 'pdfSemua'])->name('pdf.semua');
+// ===== ROUTES UNTUK INPUT DATA =====
+Route::prefix('meters')->name('meters.')->group(function () {
+    Route::get('/create', [MeterController::class, 'create'])->name('create');
+    Route::get('/previous-data', [MeterController::class, 'getPreviousData'])->name('previous');
+    Route::post('/store-air', [MeterController::class, 'storeAir'])->name('store.air');
+    Route::post('/store-listrik', [MeterController::class, 'storeListrik'])->name('store.listrik');
+    Route::post('/store-combined', [MeterController::class, 'storeCombined'])->name('store.combined');
 });
 
-// ==================== ROUTES EXPORT & PREVIEW PDF LENGKAP ====================
+// ===== ROUTES UNTUK EXPORT (GABUNGKAN SEMUA DALAM SATU GROUP) =====
 Route::prefix('export')->name('export.')->group(function () {
     
-    // ========== PREVIEW HTML (HALAMAN PREVIEW) ==========
-    // Laporan Harian - Preview HTML
+    // Halaman filter export
+    Route::get('/filter', function() {
+        return view('export.filter');
+    })->name('filter');
+    
+    // ===== EXPORT AIR =====
+    // PDF Air
+    Route::get('/pdf-air', [ExportController::class, 'pdfAir'])->name('pdf.air');
+    Route::get('/pdf-air-harian', [ExportController::class, 'pdfAirHarian'])->name('pdf.air.harian');
+    Route::get('/pdf-air-mingguan', [ExportController::class, 'pdfAirMingguan'])->name('pdf.air.mingguan');
+    Route::get('/pdf-air-bulanan', [ExportController::class, 'pdfAirBulanan'])->name('pdf.air.bulanan');
+    Route::get('/pdf-air-tahunan', [ExportController::class, 'pdfAirTahunan'])->name('pdf.air.tahunan');
+    
+    // Excel Air
+    Route::get('/excel-air', [ExportController::class, 'excelAir'])->name('excel.air');
+    Route::get('/excel-air-harian', [ExportController::class, 'excelAirHarian'])->name('excel.air.harian');
+    Route::get('/excel-air-mingguan', [ExportController::class, 'excelAirMingguan'])->name('excel.air.mingguan');
+    Route::get('/excel-air-bulanan', [ExportController::class, 'excelAirBulanan'])->name('excel.air.bulanan');
+    Route::get('/excel-air-tahunan', [ExportController::class, 'excelAirTahunan'])->name('excel.air.tahunan');
+    
+    // ===== EXPORT LISTRIK =====
+    // PDF Listrik
+    Route::get('/pdf-listrik', [ExportController::class, 'pdfListrik'])->name('pdf.listrik');
+    Route::get('/pdf-listrik-harian', [ExportController::class, 'pdfListrikHarian'])->name('pdf.listrik.harian');
+    Route::get('/pdf-listrik-mingguan', [ExportController::class, 'pdfListrikMingguan'])->name('pdf.listrik.mingguan');
+    Route::get('/pdf-listrik-bulanan', [ExportController::class, 'pdfListrikBulanan'])->name('pdf.listrik.bulanan');
+    Route::get('/pdf-listrik-tahunan', [ExportController::class, 'pdfListrikTahunan'])->name('pdf.listrik.tahunan');
+    
+    // Excel Listrik
+    Route::get('/excel-listrik', [ExportController::class, 'excelListrik'])->name('excel.listrik');
+    Route::get('/excel-listrik-harian', [ExportController::class, 'excelListrikHarian'])->name('excel.listrik.harian');
+    Route::get('/excel-listrik-mingguan', [ExportController::class, 'excelListrikMingguan'])->name('excel.listrik.mingguan');
+    Route::get('/excel-listrik-bulanan', [ExportController::class, 'excelListrikBulanan'])->name('excel.listrik.bulanan');
+    Route::get('/excel-listrik-tahunan', [ExportController::class, 'excelListrikTahunan'])->name('excel.listrik.tahunan');
+    
+    // ===== EXPORT MODEL LAMA (MeterReading) =====
+    // Preview HTML
     Route::get('/preview-harian', [ExportController::class, 'previewHarian'])->name('preview.harian');
-    
-    // Laporan Bulanan - Preview HTML
     Route::get('/preview-bulanan', [ExportController::class, 'previewBulanan'])->name('preview.bulanan');
-    
-    // Laporan Semua Data - Preview HTML (dengan filter)
     Route::get('/preview-semua', [ExportController::class, 'previewSemua'])->name('preview.semua');
     
-    
-    // ========== PREVIEW PDF (TAMPIL DI BROWSER) ==========
-    // Laporan Harian - Preview PDF (I = inline/browser)
+    // Preview PDF
     Route::get('/preview-pdf-harian', [ExportController::class, 'previewPdfHarian'])->name('preview-pdf.harian');
-    
-    // Laporan Bulanan - Preview PDF (I = inline/browser)
     Route::get('/preview-pdf-bulanan', [ExportController::class, 'previewPdfBulanan'])->name('preview-pdf.bulanan');
-    
-    // Laporan Semua Data - Preview PDF (I = inline/browser)
     Route::get('/preview-pdf-semua', [ExportController::class, 'previewPdfSemua'])->name('preview-pdf.semua');
     
-    
-    // ========== DOWNLOAD PDF (FORCE DOWNLOAD) ==========
-    // Laporan Harian - Download PDF (D = download)
+    // Download PDF
     Route::get('/pdf-harian', [ExportController::class, 'pdfHarian'])->name('pdf.harian');
-    
-    // Laporan Bulanan - Download PDF (D = download)
     Route::get('/pdf-bulanan', [ExportController::class, 'pdfBulanan'])->name('pdf.bulanan');
-    
-    // Laporan Semua Data - Download PDF (D = download)
     Route::get('/pdf-semua', [ExportController::class, 'pdfSemua'])->name('pdf.semua');
     
+    // Excel Model Lama
+    Route::get('/excel-semua', [ExportController::class, 'excelSemua'])->name('excel.semua');
+    Route::get('/excel-harian', [ExportController::class, 'excelHarian'])->name('excel.harian');
+    Route::get('/excel-bulanan', [ExportController::class, 'excelBulanan'])->name('excel.bulanan');
+    Route::get('/excel-tahunan', [ExportController::class, 'excelTahunan'])->name('excel.tahunan');
 });
