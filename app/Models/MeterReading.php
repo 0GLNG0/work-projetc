@@ -71,18 +71,27 @@ class MeterReading extends Model
     ];
 
     public static $petugasPerLokasi = [
-                'kuwak1' => ['Udin', 'Adi', 'Arif', 'Slamet'],
-                'pesantren' => ['Udin', 'Adi', 'Arif', 'Slamet'],
-                'tosaren' => ['Udin', 'Adi', 'Arif', 'Slamet'],
-                'kleco' => ['Udin', 'Adi', 'Arif', 'Slamet'],
-                'ngronggo' => ['Udin', 'Adi', 'Arif', 'Slamet'],
-                'tamanan' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
-                'wilis utara' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
-                'wilis selatan' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
-                'unik' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
-                'pojok' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
-                'sukorame' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
-                'gayam' => ['Alfin', 'Adit', 'Yudit', 'Rizki'],
+                'kuwak1' => ['Rizki Bagus'],
+                'kuwak2' => ['Rizki Bagus'],
+                'kuwak3' => ['Rizki Bagus'],
+                'balowerti' => ['Rizki Bagus'], 
+                'rusunawa' => ['Rizki Bagus'],
+                'balai kota' => ['Rizki Bagus'],
+                'gayam' => ['Agus Salim'],
+                'ngampel' => ['Agus Salim'],
+                'wilis selatan' => ['Agus Salim'],
+                'wilis utara' => ['Agus Salim'],
+                'tamanan1' => ['Agus Salim'],
+                'tamanan2' => ['Agus Salim'],
+                'sukorame' => ['Fadkul Adim'],
+                'pojok' => ['Fadkul Adim'],
+                'bnn' => ['Fadkul Adim'],
+                'unik' => ['Fadkul Adim'],
+                'tosaren' => ['Sigit Santoso'],
+                'ngronggo' => ['Sigit Santoso'],
+                'kleco' => ['Sigit Santoso'],
+                
+                'goa barong' => ['Fadkul Adim'], //belum ada nama
             ];
             
             // Method untuk ambil petugas berdasarkan lokasi

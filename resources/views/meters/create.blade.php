@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('title', 'Input Data Meter')
-
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- HEADER -->
@@ -13,7 +12,6 @@
         <p class="text-gray-600">Input data meter air dan listrik dalam satu form</p>
     </div>
     
-
     <!-- FORM UTAMA - SATU FORM UNTUK SEMUA -->
     <form id="formMeter" method="POST" action="{{ route('meters.store.combined') }}" enctype="multipart/form-data">
         @csrf
@@ -225,7 +223,57 @@
                 <span class="text-xl font-bold text-green-600" id="listrikPemakaian">0 kWh</span>
             </div>
         </div>
-        
+        <div class="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
+    <h3 class="text-lg font-bold text-blue-700 border-b pb-2">Detail Penggunaan Listrik (Data Excel Client)</h3>
+<!-- LWBP -->
+   <div class="mt-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
+    <h4 class="font-bold text-blue-800 mb-3">Rincian Tambahan Listrik</h4>
+    
+    <div class="grid grid-cols-3 gap-2 mb-3">
+        <div>
+            <label class="text-xs text-gray-600">LWBP Awal</label>
+            <input type="number" id="lwbp_awal" class="w-full form-control bg-gray-200" readonly>
+        </div>
+        <div>
+            <label class="text-xs font-bold text-blue-600">LWBP Akhir (Input)</label>
+            <input type="number" step="0.01" id="lwbp_akhir" name="lwbp_akhir" class="w-full form-control input-hitung">
+        </div>
+        <div>
+            <label class="text-xs text-gray-600">Pemakaian</label>
+            <input type="number" id="pemakaian_lwbp" class="w-full form-control bg-gray-100 font-bold" readonly>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2 mb-3">
+        <div>
+            <label class="text-xs text-gray-600">WBP Awal</label>
+            <input type="number" id="wbp_awal" class="w-full form-control bg-gray-200" readonly>
+        </div>
+        <div>
+            <label class="text-xs font-bold text-blue-600">WBP Akhir (Input)</label>
+            <input type="number" step="0.01" id="wbp_akhir" name="wbp_akhir" class="w-full form-control input-hitung">
+        </div>
+        <div>
+            <label class="text-xs text-gray-600">Pemakaian</label>
+            <input type="number" id="pemakaian_wbp" class="w-full form-control bg-gray-100 font-bold" readonly>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2">
+        <div>
+            <label class="text-xs text-gray-600">KVARH Awal</label>
+            <input type="number" id="kvarh_awal" class="w-full form-control bg-gray-200" readonly>
+        </div>
+        <div>
+            <label class="text-xs font-bold text-blue-600">KVARH Akhir (Input)</label>
+            <input type="number" step="0.01" id="kvarh_akhir" name="kvarh_akhir" class="w-full form-control input-hitung">
+        </div>
+        <div>
+            <label class="text-xs text-gray-600">Pemakaian</label>
+            <input type="number" id="pemakaian_kvarh" class="w-full form-control bg-gray-100 font-bold" readonly>
+        </div>
+    </div>
+</div>
         <!-- Status & Keterangan Listrik -->
         <div class="grid grid-cols-1 gap-4">
             <div>
@@ -292,7 +340,7 @@
 
 <script>
 
-     const petugasPerLokasi = @json($petugasPerLokasi);
+    const petugasPerLokasi = @json($petugasPerLokasi);
     
     const lokasiSelect = document.getElementById('lokasiSelect');
     const petugasSelect = document.getElementById('petugasSelect');
@@ -318,216 +366,216 @@
         }
     }
     
-    // Event listener saat lokasi berubah
-    lokasiSelect.addEventListener('change', function() {
-        updatePetugasDropdown();
-        
-        // ... kode untuk ambil data kemarin (yang sudah ada)
-        if (this.value) {
-            fetchPreviousData(this.value);
-        }
-    });
-    
-    // Fungsi untuk mengambil data kemarin (sudah ada)
-    function fetchPreviousData(lokasi) {
-        fetch(`/meters/previous-data?lokasi=${lokasi}`)
-            .then(res => res.json())
-            .then(data => {
-                // Update card Air
-                if (data.air) {
-                    let meterAir = parseFloat(data.air.meter_akhir) || 0;
-                    document.getElementById('airMeterKemarin').textContent = meterAir.toFixed(2);
-                    document.getElementById('airTanggalKemarin').textContent = data.air.tanggal || '-';
-                    document.getElementById('airPetugasKemarin').textContent = data.air.petugas ? `Petugas: ${data.air.petugas}` : '-';
-                } else {
-                    document.getElementById('airMeterKemarin').textContent = '0';
-                    document.getElementById('airTanggalKemarin').textContent = '-';
-                    document.getElementById('airPetugasKemarin').textContent = '-';
-                }
-                
-                // Update card Listrik
-                if (data.listrik) {
-                    let meterListrik = parseFloat(data.listrik.meter_akhir) || 0;
-                    document.getElementById('listrikMeterKemarin').textContent = meterListrik.toFixed(2);
-                    document.getElementById('listrikTanggalKemarin').textContent = data.listrik.tanggal || '-';
-                    document.getElementById('listrikPetugasKemarin').textContent = data.listrik.petugas ? `Petugas: ${data.listrik.petugas}` : '-';
-                } else {
-                    document.getElementById('listrikMeterKemarin').textContent = '0';
-                    document.getElementById('listrikTanggalKemarin').textContent = '-';
-                    document.getElementById('listrikPetugasKemarin').textContent = '-';
-                }
-            });
-    }
     // Preview foto air
-document.getElementById('foto_air').addEventListener('change', function(e) {
-    const preview = document.getElementById('preview_foto_air');
-    const file = e.target.files[0];
-    
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.querySelector('img').src = e.target.result;
-            preview.classList.remove('hidden');
-        }
-        reader.readAsDataURL(file);
-    } else {
-        preview.classList.add('hidden');
-    }
-});
-
-// Preview foto listrik
-document.getElementById('foto_listrik').addEventListener('change', function(e) {
-    const preview = document.getElementById('preview_foto_listrik');
-    const file = e.target.files[0];
-    
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.querySelector('img').src = e.target.result;
-            preview.classList.remove('hidden');
-        }
-        reader.readAsDataURL(file);
-    } else {
-        preview.classList.add('hidden');
-    }
-});
-document.addEventListener('DOMContentLoaded', function() {
-    const lokasiSelect = document.getElementById('lokasiSelect');
-    const cardAir = document.getElementById('cardAir');
-    const cardListrik = document.getElementById('cardListrik');
-    const infoKemarin = document.getElementById('infoKemarin');
-    
-    // Data meter kemarin
-    let dataKemarin = {
-        air: null,
-        listrik: null
-    };
-    
-    // Fungsi untuk mengaktifkan/menonaktifkan card
-    function setCardsEnabled(lokasiTerpilih) {
-        if (lokasiTerpilih) {
-            cardAir.style.opacity = '1';
-            cardAir.style.pointerEvents = 'auto';
-            cardListrik.style.opacity = '1';
-            cardListrik.style.pointerEvents = 'auto';
+    document.getElementById('foto_air').addEventListener('change', function(e) {
+        const preview = document.getElementById('preview_foto_air');
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.querySelector('img').src = e.target.result;
+                preview.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
         } else {
-            cardAir.style.opacity = '0.5';
-            cardAir.style.pointerEvents = 'none';
-            cardListrik.style.opacity = '0.5';
-            cardListrik.style.pointerEvents = 'none';
-            infoKemarin.classList.add('hidden');
-        }
-    }
-    
-    // Ambil data kemarin saat lokasi dipilih
-    lokasiSelect.addEventListener('change', function() {
-        const lokasi = this.value;
-        setCardsEnabled(lokasi);
-        
-        if (lokasi) {
-            fetch(`/meters/previous-data?lokasi=${lokasi}`)
-                .then(res => res.json())
-                .then(data => {
-                    dataKemarin = data;
-                    
-                    // Update info ringkas
-                    infoKemarin.classList.remove('hidden');
-                    document.getElementById('infoAirKemarin').textContent = 
-                        data.air?.meter_akhir ? data.air.meter_akhir.toFixed(2) + ' m³' : 'Belum ada data';
-                    document.getElementById('infoListrikKemarin').textContent = 
-                        data.listrik?.meter_akhir ? data.listrik.meter_akhir.toFixed(2) + ' kWh' : 'Belum ada data';
-                    
-                    // Update card Air
-                    if (data.air) {
-                        document.getElementById('airMeterKemarin').textContent = data.air.meter_akhir ? data.air.meter_akhir.toFixed(2) : '0';
-                        document.getElementById('airTanggalKemarin').textContent = data.air.tanggal || '-';
-                        document.getElementById('airPetugasKemarin').textContent = data.air.petugas ? `Petugas: ${data.air.petugas}` : '-';
-                    } else {
-                        document.getElementById('airMeterKemarin').textContent = '0';
-                        document.getElementById('airTanggalKemarin').textContent = '-';
-                        document.getElementById('airPetugasKemarin').textContent = '-';
-                    }
-                    
-                    // Update card Listrik
-                    if (data.listrik) {
-                        document.getElementById('listrikMeterKemarin').textContent = data.listrik.meter_akhir ? data.listrik.meter_akhir.toFixed(2) : '0';
-                        document.getElementById('listrikTanggalKemarin').textContent = data.listrik.tanggal || '-';
-                        document.getElementById('listrikPetugasKemarin').textContent = data.listrik.petugas ? `Petugas: ${data.listrik.petugas}` : '-';
-                    } else {
-                        document.getElementById('listrikMeterKemarin').textContent = '0';
-                        document.getElementById('listrikTanggalKemarin').textContent = '-';
-                        document.getElementById('listrikPetugasKemarin').textContent = '-';
-                    }
-                    
-                    // Reset perhitungan
-                    hitungPemakaianAir();
-                    hitungPemakaianListrik();
-                });
+            preview.classList.add('hidden');
         }
     });
-    
-    // Hitung pemakaian air real-time
-    function hitungPemakaianAir() {
-        const meterSekarang = parseFloat(document.getElementById('airMeterSekarang').value) || 0;
-        const meterKemarin = parseFloat(document.getElementById('airMeterKemarin').textContent) || 0;
-        
-        if (meterSekarang > 0 && meterKemarin > 0) {
-            const pemakaian = meterSekarang - meterKemarin;
-            if (pemakaian >= 0) {
-                document.getElementById('airPemakaian').textContent = pemakaian.toFixed(2) + ' m³';
-            } else {
-                document.getElementById('airPemakaian').textContent = '⚠️ Error: Meter lebih kecil';
+
+    // Preview foto listrik
+    document.getElementById('foto_listrik').addEventListener('change', function(e) {
+        const preview = document.getElementById('preview_foto_listrik');
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.querySelector('img').src = e.target.result;
+                preview.classList.remove('hidden');
             }
+            reader.readAsDataURL(file);
         } else {
-            document.getElementById('airPemakaian').textContent = '0 m³';
+            preview.classList.add('hidden');
         }
-    }
-    
-    // Hitung pemakaian listrik real-time
-    function hitungPemakaianListrik() {
-        const meterSekarang = parseFloat(document.getElementById('listrikMeterSekarang').value) || 0;
-        const meterKemarin = parseFloat(document.getElementById('listrikMeterKemarin').textContent) || 0;
-        
-        if (meterSekarang > 0 && meterKemarin > 0) {
-            const pemakaian = meterSekarang - meterKemarin;
-            if (pemakaian >= 0) {
-                document.getElementById('listrikPemakaian').textContent = pemakaian.toFixed(2) + ' kWh';
+    });
+
+    // ==========================================
+    // FUNGSI NGITUNG OTOMATIS (LWBP, WBP, KVARH)
+    // ==========================================
+    function hitungSelisih(idAwal, idAkhir, idHasil) {
+        const awal = document.getElementById(idAwal);
+        const akhir = document.getElementById(idAkhir);
+        const hasil = document.getElementById(idHasil);
+
+        if (!awal || !akhir || !hasil) return; // Sabuk pengaman
+
+        const hitung = () => {
+            const valAwal = parseFloat(awal.value) || 0;
+            const valAkhir = parseFloat(akhir.value) || 0;
+            let pemakaian = valAkhir - valAwal;
+            hasil.value = pemakaian.toFixed(2);
+
+            if (pemakaian < 0) {
+                hasil.classList.add('text-red-500', 'bg-red-100');
             } else {
-                document.getElementById('listrikPemakaian').textContent = '⚠️ Error: Meter lebih kecil';
+                hasil.classList.remove('text-red-500', 'bg-red-100');
             }
-        } else {
-            document.getElementById('listrikPemakaian').textContent = '0 kWh';
+        };
+
+        awal.addEventListener('input', hitung);
+        akhir.addEventListener('input', hitung);
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardAir = document.getElementById('cardAir');
+        const cardListrik = document.getElementById('cardListrik');
+        const infoKemarin = document.getElementById('infoKemarin');
+        
+        // Aktifkan auto-hitung listrik
+        hitungSelisih('lwbp_awal', 'lwbp_akhir', 'pemakaian_lwbp');
+        hitungSelisih('wbp_awal', 'wbp_akhir', 'pemakaian_wbp');
+        hitungSelisih('kvarh_awal', 'kvarh_akhir', 'pemakaian_kvarh');
+
+        function setCardsEnabled(lokasiTerpilih) {
+            if (lokasiTerpilih) {
+                cardAir.style.opacity = '1';
+                cardAir.style.pointerEvents = 'auto';
+                cardListrik.style.opacity = '1';
+                cardListrik.style.pointerEvents = 'auto';
+            } else {
+                cardAir.style.opacity = '0.5';
+                cardAir.style.pointerEvents = 'none';
+                cardListrik.style.opacity = '0.5';
+                cardListrik.style.pointerEvents = 'none';
+                infoKemarin.classList.add('hidden');
+            }
         }
-    }
-    
-    document.getElementById('airMeterSekarang').addEventListener('input', hitungPemakaianAir);
-    document.getElementById('listrikMeterSekarang').addEventListener('input', hitungPemakaianListrik);
-    
-// Validasi sebelum submit
-document.getElementById('formMeter').addEventListener('submit', function(e) {
-    const lokasi = lokasiSelect.value;
-    const tanggal = document.getElementById('tanggal').value;
-    const jam = document.getElementById('jam').value;
-    const petugas = document.getElementById('petugasSelect').value; // <-- DIPERBAIKI
-    const nomorIdListrik = document.getElementById('nomorIdListrik').value;
-    const meterAir = document.getElementById('airMeterSekarang').value;
-    const meterListrik = document.getElementById('listrikMeterSekarang').value;
-    
-    let errors = [];
-    
-    if (!lokasi) errors.push('Lokasi harus dipilih');
-    if (!tanggal) errors.push('Tanggal harus diisi');
-    if (!jam) errors.push('Jam harus diisi');
-    if (!petugas) errors.push('Nama petugas harus diisi');
-    if (!nomorIdListrik) errors.push('Nomor ID Listrik harus diisi');
-    if (!meterAir) errors.push('Meter air harus diisi');
-    if (!meterListrik) errors.push('Meter listrik harus diisi');
-    
-    if (errors.length > 0) {
-        e.preventDefault(); // Hentikan form agar tidak terkirim
-        alert('❌ Lengkapi data berikut:\n- ' + errors.join('\n- '));
-    }
-});
-});
+        
+        // Ambil data kemarin saat lokasi dipilih
+        lokasiSelect.addEventListener('change', function() {
+            const lokasi = this.value;
+            setCardsEnabled(lokasi);
+            updatePetugasDropdown(); // Update petugas juga
+            
+            if (lokasi) {
+                fetch(`/meters/previous-data?lokasi=${lokasi}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        // Update info ringkas
+                        infoKemarin.classList.remove('hidden');
+                        document.getElementById('infoAirKemarin').textContent = 
+                            data.air?.meter_akhir ? data.air.meter_akhir.toFixed(2) + ' m³' : 'Belum ada data';
+                        document.getElementById('infoListrikKemarin').textContent = 
+                            data.listrik?.meter_akhir ? data.listrik.meter_akhir.toFixed(2) + ' kWh' : 'Belum ada data';
+                        
+                        // Update card Air
+                        if (data.air) {
+                            document.getElementById('airMeterKemarin').textContent = data.air.meter_akhir ? data.air.meter_akhir.toFixed(2) : '0';
+                            document.getElementById('airTanggalKemarin').textContent = data.air.tanggal || '-';
+                            document.getElementById('airPetugasKemarin').textContent = data.air.petugas ? `Petugas: ${data.air.petugas}` : '-';
+                        } else {
+                            document.getElementById('airMeterKemarin').textContent = '0';
+                            document.getElementById('airTanggalKemarin').textContent = '-';
+                            document.getElementById('airPetugasKemarin').textContent = '-';
+                        }
+                        
+                        // Update card Listrik & ISI DATA AWAL LWBP, WBP, KVARH
+                        if (data.listrik) {
+                            document.getElementById('listrikMeterKemarin').textContent = data.listrik.meter_akhir ? data.listrik.meter_akhir.toFixed(2) : '0';
+                            document.getElementById('listrikTanggalKemarin').textContent = data.listrik.tanggal || '-';
+                            document.getElementById('listrikPetugasKemarin').textContent = data.listrik.petugas ? `Petugas: ${data.listrik.petugas}` : '-';
+                            
+                            // 🔥 INI DIA YANG BIKIN ANGKA AWAL MUNCUL OTOMATIS 🔥
+                            let elLwbp = document.getElementById('lwbp_awal');
+                            let elWbp = document.getElementById('wbp_awal');
+                            let elKvarh = document.getElementById('kvarh_awal');
+                            
+                            if(elLwbp) elLwbp.value = data.listrik.lwbp_akhir || 0;
+                            if(elWbp) elWbp.value = data.listrik.wbp_akhir || 0;
+                            if(elKvarh) elKvarh.value = data.listrik.kvarh_akhir || 0;
+
+                        } else {
+                            document.getElementById('listrikMeterKemarin').textContent = '0';
+                            document.getElementById('listrikTanggalKemarin').textContent = '-';
+                            document.getElementById('listrikPetugasKemarin').textContent = '-';
+                            
+                            // Reset ke 0 kalau datanya nggak ada
+                            let elLwbp = document.getElementById('lwbp_awal');
+                            let elWbp = document.getElementById('wbp_awal');
+                            let elKvarh = document.getElementById('kvarh_awal');
+                            if(elLwbp) elLwbp.value = 0;
+                            if(elWbp) elWbp.value = 0;
+                            if(elKvarh) elKvarh.value = 0;
+                        }
+                        
+                        // Reset perhitungan
+                        hitungPemakaianAir();
+                        hitungPemakaianListrik();
+                    });
+            }
+        });
+        
+        // Hitung pemakaian air real-time
+        function hitungPemakaianAir() {
+            const meterSekarang = parseFloat(document.getElementById('airMeterSekarang').value) || 0;
+            const meterKemarin = parseFloat(document.getElementById('airMeterKemarin').textContent) || 0;
+            
+            if (meterSekarang > 0 && meterKemarin > 0) {
+                const pemakaian = meterSekarang - meterKemarin;
+                if (pemakaian >= 0) {
+                    document.getElementById('airPemakaian').textContent = pemakaian.toFixed(2) + ' m³';
+                } else {
+                    document.getElementById('airPemakaian').textContent = '⚠️ Error: Meter lebih kecil';
+                }
+            } else {
+                document.getElementById('airPemakaian').textContent = '0 m³';
+            }
+        }
+        
+        // Hitung pemakaian listrik real-time
+        function hitungPemakaianListrik() {
+            const meterSekarang = parseFloat(document.getElementById('listrikMeterSekarang').value) || 0;
+            const meterKemarin = parseFloat(document.getElementById('listrikMeterKemarin').textContent) || 0;
+            
+            if (meterSekarang > 0 && meterKemarin > 0) {
+                const pemakaian = meterSekarang - meterKemarin;
+                if (pemakaian >= 0) {
+                    document.getElementById('listrikPemakaian').textContent = pemakaian.toFixed(2) + ' kWh';
+                } else {
+                    document.getElementById('listrikPemakaian').textContent = '⚠️ Error: Meter lebih kecil';
+                }
+            } else {
+                document.getElementById('listrikPemakaian').textContent = '0 kWh';
+            }
+        }
+        
+        document.getElementById('airMeterSekarang').addEventListener('input', hitungPemakaianAir);
+        document.getElementById('listrikMeterSekarang').addEventListener('input', hitungPemakaianListrik);
+        
+        // Validasi sebelum submit
+        document.getElementById('formMeter').addEventListener('submit', function(e) {
+            const lokasi = lokasiSelect.value;
+            const tanggal = document.getElementById('tanggal').value;
+            const jam = document.getElementById('jam').value;
+            const petugas = document.getElementById('petugasSelect').value; 
+            const nomorIdListrik = document.getElementById('nomorIdListrik').value;
+            const meterAir = document.getElementById('airMeterSekarang').value;
+            const meterListrik = document.getElementById('listrikMeterSekarang').value;
+            
+            let errors = [];
+            if (!lokasi) errors.push('Lokasi harus dipilih');
+            if (!tanggal) errors.push('Tanggal harus diisi');
+            if (!jam) errors.push('Jam harus diisi');
+            if (!petugas) errors.push('Nama petugas harus diisi');
+            if (!nomorIdListrik) errors.push('Nomor ID Listrik harus diisi');
+            if (!meterAir) errors.push('Meter air harus diisi');
+            if (!meterListrik) errors.push('Meter listrik harus diisi');
+            
+            if (errors.length > 0) {
+                e.preventDefault(); 
+                alert('❌ Lengkapi data berikut:\n- ' + errors.join('\n- '));
+            }
+        });
+    });
 </script>
 @endsection

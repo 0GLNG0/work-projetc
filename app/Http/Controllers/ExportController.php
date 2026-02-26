@@ -294,7 +294,7 @@ class ExportController extends Controller
     $filename = $this->generateFilename('air', $request);
 
     // 6. LEMPAR DATA KE EXPORT (Pakai $readings, BUKAN $request)
-    return Excel::download(new MeterAirExport($readings), $filename . '.xlsx');
+    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\LaporanExport(), $filename . '.xlsx');
 }
 
 

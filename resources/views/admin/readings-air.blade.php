@@ -14,22 +14,6 @@
         <form method="GET" action="{{ route('admin.readings.air') }}" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
-                    <select name="lokasi" class="w-full px-3 py-2 border rounded-lg">
-                        <option value="">Semua Lokasi</option>
-                        @foreach(App\Models\MeterAir::$lokasiOptions as $grup => $lokasis)
-                            <optgroup label="{{ $grup }}">
-                                @foreach($lokasis as $value => $label)
-                                    <option value="{{ $value }}" {{ request('lokasi') == $value ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status_meter" class="w-full px-3 py-2 border rounded-lg">
                         <option value="">Semua Status</option>
@@ -67,6 +51,25 @@
         </form>
     </div>
 </div>
+<div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+    <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">Filter Lokasi</h3>
+    
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ url()->current() }}" 
+           class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
+                  {{ !$lokasiAktif ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            🌍 Semua Lokasi
+        </a>
+        
+        @foreach($daftarLokasi as $lokasi)
+            <a href="{{ url()->current() }}?lokasi={{ urlencode($lokasi) }}" 
+               class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
+                      {{ $lokasiAktif == $lokasi ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                📍 {{ $lokasi }}
+            </a>
+        @endforeach
+    </div>
+</div>
 
 <!-- TABEL DATA AIR -->
 <div class="space-y-8">
@@ -92,6 +95,7 @@
                             <th scope="col" class="px-6 py-3">Pemakaian (m³)</th>
                             <th scope="col" class="px-6 py-3">Status</th>
                             <th scope="col" class="px-6 py-3">Petugas</th>
+                            <th scope="col" class="px-6 py-3">Foto</th>
                             <th scope="col" class="px-6 py-3">Aksi</th>
                         </tr>
                     </thead>
@@ -107,6 +111,16 @@
                                 </td>
                                 <td class="px-6 py-4">{{ $item->status_meter ?? '-' }}</td>
                                 <td class="px-6 py-4">{{ $item->petugas }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                @if($item->foto)
+                    <a href="{{ asset('storage/' . $item->foto) }}" target="_blank" 
+                       class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
+                        <i class="fas fa-image mr-1"></i> Lihat
+                    </a>
+                @else
+                    <span class="text-gray-400">-</span>
+                @endif
+            </td>
                                 <td class="px-6 py-4 flex space-x-2">
                                     <form action="{{ route('admin.readings.air.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus data?')">
                             @csrf @method('DELETE')

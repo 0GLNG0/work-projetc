@@ -23,33 +23,39 @@ class MeterController extends Controller
         return view('meters.create', compact('lokasiOptions', 'statusMeter','petugasPerLokasi'));
     }
 
-    public function getPreviousData(Request $request)
-{
-    $lokasi = $request->lokasi;
-    
-    $lastAir = MeterAir::where('lokasi', $lokasi)
-        ->whereNotNull('meter_akhir')
-        ->latest('tanggal')
-        ->first();
-    
-    $lastListrik = MeterListrik::where('lokasi', $lokasi)
-        ->whereNotNull('meter_akhir')
-        ->latest('tanggal')
-        ->first();
-    
-    return response()->json([
-        'air' => $lastAir ? [
-            'meter_akhir' => $lastAir->meter_akhir ? (float) $lastAir->meter_akhir : 0,  // <-- CAST KE FLOAT!
-            'tanggal' => $lastAir->tanggal->format('d/m/Y'),
-            'petugas' => $lastAir->petugas
-        ] : null,
-        'listrik' => $lastListrik ? [
-            'meter_akhir' => $lastListrik->meter_akhir ? (float) $lastListrik->meter_akhir : 0,  // <-- CAST KE FLOAT!
-            'tanggal' => $lastListrik->tanggal->format('d/m/Y'),
-            'petugas' => $lastListrik->petugas
-        ] : null
-    ]);
-}
+public function getPreviousData(Request $request)
+    {
+        $lokasi = $request->lokasi;
+        
+        $lastAir = MeterAir::where('lokasi', $lokasi)
+            ->whereNotNull('meter_akhir')
+            ->latest('tanggal')
+            ->first();
+        
+        $lastListrik = MeterListrik::where('lokasi', $lokasi)
+            ->whereNotNull('meter_akhir')
+            ->latest('tanggal')
+            ->first();
+        
+        return response()->json([
+            'air' => $lastAir ? [
+                'meter_akhir' => $lastAir->meter_akhir ? (float) $lastAir->meter_akhir : 0,
+                'tanggal' => $lastAir->tanggal->format('d/m/Y'),
+                'petugas' => $lastAir->petugas
+            ] : null,
+            'listrik' => $lastListrik ? [
+                'meter_akhir' => $lastListrik->meter_akhir ? (float) $lastListrik->meter_akhir : 0,
+                
+                // TAMBAHAN: Kirim data akhir kemarin ke form biar UX-nya enak
+                'lwbp_akhir' => $lastListrik->lwbp_akhir ? (float) $lastListrik->lwbp_akhir : 0,
+                'wbp_akhir' => $lastListrik->wbp_akhir ? (float) $lastListrik->wbp_akhir : 0,
+                'kvarh_akhir' => $lastListrik->kvarh_akhir ? (float) $lastListrik->kvarh_akhir : 0,
+                
+                'tanggal' => $lastListrik->tanggal->format('d/m/Y'),
+                'petugas' => $lastListrik->petugas
+            ] : null
+        ]);
+    }
 
     public function storeAir(Request $request)
     {
@@ -145,16 +151,22 @@ class MeterController extends Controller
         // Validasi
         $validated = $request->validate([
             'lokasi' => 'required|string',
-            'tanggal' => 'required|date',
-            'jam' => 'required',
-            'petugas' => 'required|string',
-            'meter_air' => 'required|numeric|min:0',
-            'meter_listrik' => 'required|numeric|min:0',
-            'nomor_id_listrik' => 'required|string',
-            'status_meter_air' => 'nullable|string',
-            'status_meter_listrik' => 'nullable|string',
-            'keterangan_air' => 'nullable|string',
-            'keterangan_listrik' => 'nullable|string',
+                'tanggal' => 'required|date',
+                'jam' => 'required',
+                'petugas' => 'required|string',
+                'meter_air' => 'required|numeric|min:0',
+                'meter_listrik' => 'required|numeric|min:0',
+                'nomor_id_listrik' => 'required|string',
+                
+                // TAMBAHAN VALIDASI (nullable biar kalau kosong nggak error)
+                'lwbp_akhir' => 'nullable|numeric|min:0',
+                'wbp_akhir' => 'nullable|numeric|min:0',
+                'kvarh_akhir' => 'nullable|numeric|min:0',
+                
+                'status_meter_air' => 'nullable|string',
+                'status_meter_listrik' => 'nullable|string',
+                'keterangan_air' => 'nullable|string',
+                'keterangan_listrik' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -189,24 +201,42 @@ if ($request->hasFile('foto_air')) {
         
         // ===== CEK DATA LISTRIK =====
         $lastListrik = MeterListrik::where('lokasi', $request->lokasi)
-            ->latest('tanggal')
-            ->first();
-            
-        $dataListrik = [
-            'lokasi' => $request->lokasi,
-            'tanggal' => $request->tanggal,
-            'jam' => $request->jam,
-            'nomor_id' => $request->nomor_id_listrik,
-            'meter_akhir' => $request->meter_listrik,
-            'status_meter' => $request->status_meter_listrik ?? 'normal',
-            'keterangan' => $request->keterangan_listrik,
-            'petugas' => $request->petugas,
-        ];
-        
+                ->latest('tanggal')
+                ->first();
+                
+            $dataListrik = [
+                'lokasi' => $request->lokasi,
+                'tanggal' => $request->tanggal,
+                'jam' => $request->jam,
+                'nomor_id' => $request->nomor_id_listrik,
+                'meter_akhir' => $request->meter_listrik,
+                
+                // Masukkan input form ke data listrik
+                'lwbp_akhir' => $request->lwbp_akhir,
+                'wbp_akhir' => $request->wbp_akhir,
+                'kvarh_akhir' => $request->kvarh_akhir,
+                
+                'status_meter' => $request->status_meter_listrik ?? 'normal',
+                'keterangan' => $request->keterangan_listrik,
+                'petugas' => $request->petugas,
+            ];
         if ($lastListrik) {
-            $dataListrik['meter_awal'] = $lastListrik->meter_akhir;
-            $dataListrik['pemakaian'] = round($request->meter_listrik - $lastListrik->meter_akhir, 2);
-        }
+                // Listrik Utama
+                $dataListrik['meter_awal'] = $lastListrik->meter_akhir;
+                $dataListrik['pemakaian'] = round($request->meter_listrik - $lastListrik->meter_akhir, 2);
+                
+                // Logika LWBP
+                $dataListrik['lwbp_awal'] = $lastListrik->lwbp_akhir;
+                $dataListrik['pemakaian_lwbp'] = round((float)$request->lwbp_akhir - (float)$lastListrik->lwbp_akhir, 2);
+                
+                // Logika WBP
+                $dataListrik['wbp_awal'] = $lastListrik->wbp_akhir;
+                $dataListrik['pemakaian_wbp'] = round((float)$request->wbp_akhir - (float)$lastListrik->wbp_akhir, 2);
+                
+                // Logika KVARH
+                $dataListrik['kvarh_awal'] = $lastListrik->kvarh_akhir;
+                $dataListrik['pemakaian_kvarh'] = round((float)$request->kvarh_akhir - (float)$lastListrik->kvarh_akhir, 2);
+            }
         
         // Upload foto listrik jika ada
 if ($request->hasFile('foto_listrik')) {

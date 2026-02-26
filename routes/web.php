@@ -9,6 +9,8 @@ use App\Http\Controllers\ExportController;
 
 // Halaman utama
 Route::get('/', [DashboardController::class, 'home'])->name('home');
+Route::post('/import-excel-client', [App\Http\Controllers\AdminController::class, 'importExcel'])->name('import.excel');
+
 
 // Routes untuk authentication
 Route::prefix('admin')->group(function () {
@@ -104,4 +106,7 @@ Route::prefix('export')->name('export.')->group(function () {
     Route::get('/excel-harian', [ExportController::class, 'excelHarian'])->name('excel.harian');
     Route::get('/excel-bulanan', [ExportController::class, 'excelBulanan'])->name('excel.bulanan');
     Route::get('/excel-tahunan', [ExportController::class, 'excelTahunan'])->name('excel.tahunan');
-});
+
+    });
+    Route::get('/export-laporan', [App\Http\Controllers\AdminController::class, 'exportExcel'])->name('export.excel');
+    Route::delete('/admin/readings-gabungan/{id}', [App\Http\Controllers\AdminController::class, 'destroyGabungan'])->name('admin.readings.destroyGabungan');

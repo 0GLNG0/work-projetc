@@ -26,23 +26,6 @@
             <form method="GET" action="{{ route('admin.readings.gabungan') }}" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <!-- Filter Lokasi -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            <i class="fas fa-map-marker-alt text-blue-500 mr-1"></i> Lokasi
-                        </label>
-                        <select name="lokasi" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                            <option value="">Semua Lokasi</option>
-                            @foreach(App\Models\MeterAir::$lokasiOptions as $grup => $lokasis)
-                                <optgroup label="{{ $grup }}">
-                                    @foreach($lokasis as $value => $label)
-                                        <option value="{{ $value }}" {{ request('lokasi') == $value ? 'selected' : '' }}>
-                                            {{ $label }}
-                                        </option>
-                                    @endforeach
-                                </optgroup>
-                            @endforeach
-                        </select>
-                    </div>
                     
                     <!-- Filter Tanggal Mulai -->
                     <div>
@@ -98,6 +81,25 @@
                 </div>
             </form>
         </div>
+        <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+    <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">Filter Lokasi</h3>
+    
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ url()->current() }}" 
+           class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
+                  {{ !$lokasiAktif ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            🌍 Semua Lokasi
+        </a>
+        
+        @foreach($daftarLokasi as $lokasi)
+            <a href="{{ url()->current() }}?lokasi={{ urlencode($lokasi) }}" 
+               class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
+                      {{ $lokasiAktif == $lokasi ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                📍 {{ $lokasi }}
+            </a>
+        @endforeach
+    </div>
+</div>
     </div>
 
     <!-- STATISTIK CARD -->
@@ -182,7 +184,7 @@
                         @foreach($dataLokasi as $index => $item)
                             <tr class="bg-white border-b hover:bg-gray-50 transition">
                                 <td class="px-6 py-4 font-medium">{{ $index + 1 }}</td>
-                                <td class="px-6 py-4">{{ $item->tanggal->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4">{{ date('d/m/Y', strtotime($item->tanggal)) }}</td>
                                 <td class="px-6 py-4 text-blue-600 font-semibold">
                                     {{ $item->pemakaian_air ? number_format($item->pemakaian_air, 2) : '-' }}
                                 </td>
@@ -193,6 +195,14 @@
                                 <td class="px-6 py-4">
                                     <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-eye"></i></button>
                                 </td>
+                                <td>
+<form action="{{ route('admin.readings.destroyGabungan', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('⚠️ YAKIN INGIN MENGHAPUS?\n\nData Air dan Listrik untuk tanggal ini akan dihapus permanen.');">
+    @csrf
+    @method('DELETE')
+    <button type="submit" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded-md text-sm font-semibold transition-colors duration-200">
+        <i class="fas fa-trash-alt mr-1"></i> Hapus
+    </button>
+</form>
                             </tr>
                         @endforeach
                     </tbody>
