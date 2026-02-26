@@ -33,11 +33,6 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
                     <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" class="w-full px-3 py-2 border rounded-lg">
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Petugas</label>
-                    <input type="text" name="petugas" value="{{ request('petugas') }}" placeholder="Nama petugas" class="w-full px-3 py-2 border rounded-lg">
-                </div>
             </div>
             
             <div class="flex justify-end space-x-3">

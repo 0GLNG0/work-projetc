@@ -24,7 +24,7 @@
 
         <div class="p-6 md:p-8">
             <p class="text-gray-600 mb-6">
-                Klik tombol di bawah ini untuk mengunduh seluruh data yang telah tercatat. File akan terpisah secara otomatis per lokasi (Multi-sheet).
+                Klik tombol di bawah ini untuk mengunduh seluruh data yang telah tercatat.
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 items-center">

@@ -176,7 +176,7 @@
     <!-- ========== FOOTER ========== -->
     <footer class="bg-gray-800 text-white py-4 mt-auto">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-            <p>&copy; {{ date('Y') }} Sistem Monitoring Meter Air & Listrik. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Sistem Monitoring Meter Air & Listrik. PDAM Tirta Dhaha Kota Kediri</p>
         </div>
     </footer>
 

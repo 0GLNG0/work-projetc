@@ -42,9 +42,6 @@ public function readingsAir(Request $request)
         if ($request->filled('tanggal_selesai')) {
             $query->whereDate('tanggal', '<=', $request->tanggal_selesai);
         }
-        if ($request->filled('petugas')) {
-            $query->where('petugas', 'like', '%' . $request->petugas . '%');
-        }
 
         // AMBIL DATA & KELOMPOKKAN
         $readings = $query->orderBy('tanggal', 'desc')->get();
@@ -82,14 +79,29 @@ public function readingsAir(Request $request)
 
     public function readingsGabungan(Request $request)
     {
+        $lokasiAktif = $request->lokasi;
+
+        // =======================================================
+        // 1. DATA STATISTIK UNTUK CARD DI ATAS TABEL
+        // =======================================================
+        // A. Hitung Jumlah Baris Data (Berapa kali input)
+        $totalAir = \App\Models\MeterAir::count();
+        $totalListrik = \App\Models\MeterListrik::count();
+        
+        // B. Hitung Total Pemakaian Keseluruhan (Sum / Tambah-tambahan)
+        $totalPemakaianAir = \App\Models\MeterAir::sum('pemakaian');
+        $totalPemakaianListrik = \App\Models\MeterListrik::sum('pemakaian');
+
+        // C. Data Masuk Hari Ini
+        $todayAir = \App\Models\MeterAir::whereDate('tanggal', today())->count();
+        $todayListrik = \App\Models\MeterListrik::whereDate('tanggal', today())->count();
         $totalAir = \App\Models\MeterAir::count();
         $totalListrik = \App\Models\MeterListrik::count();
         $todayAir = \App\Models\MeterAir::whereDate('tanggal', today())->count();
         $todayListrik = \App\Models\MeterListrik::whereDate('tanggal', today())->count();
         $lokasiAktif = $request->lokasi;
 
-        // 1. KITA JOIN TABEL AIR DAN LISTRIK (Persis kayak rumus Excel semalam)
-        // PASTIKAN NAMA TABELNYA SESUAI ('meter_air_readings' & 'meter_listrik_readings')
+        // 1. JOIN TABEL AIR DAN LISTRIK 
 $query = \Illuminate\Support\Facades\DB::table('meter_air_readings as a')
             ->select(
                 'a.id', 'a.tanggal', 'a.lokasi', 'a.petugas',
@@ -140,7 +152,8 @@ $query = \Illuminate\Support\Facades\DB::table('meter_air_readings as a')
 
         return view('admin.readings-gabungan', compact(
             'readings', 'groupedReadings', 'lokasiAktif', 'daftarLokasi', 
-            'totalAir', 'totalListrik', 'todayAir', 'todayListrik'
+            'totalAir', 'totalListrik', 'totalPemakaianAir', 'totalPemakaianListrik', 
+            'todayAir', 'todayListrik'
         ));
     }
 
@@ -219,5 +232,5 @@ public function destroyGabungan($id)
         }
 
         return redirect()->back()->with('error', '❌ Data tidak ditemukan!');
-    }
+    }   
 }

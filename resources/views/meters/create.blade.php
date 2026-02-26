@@ -58,12 +58,12 @@
         <!-- Jam -->
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-                <i class="fas fa-clock text-blue-500 mr-1"></i>
                 Jam <span class="text-red-500">*</span>
             </label>
-            <input type="time" name="jam" id="jam" 
-                   value="{{ date('H:i') }}" required
-                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            
+                   <input type="time" name="jam" id="jam" 
+       class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-100 pointer-events-none text-gray-600" 
+       readonly>
         </div>
         
         <!-- Petugas (DROPDOWN DINAMIS) -->
@@ -125,7 +125,7 @@
             </label>
             <input type="number" step="0.01" name="meter_air" id="airMeterSekarang"
                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                   placeholder="Contoh: 1234.56">
+                   >
         </div>
         
         <!-- Pemakaian (Real-time) -->
@@ -213,7 +213,7 @@
             </label>
             <input type="number" step="0.01" name="meter_listrik" id="listrikMeterSekarang"
                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                   placeholder="Contoh: 5678.90">
+                   >
         </div>
         
         <!-- Pemakaian (Real-time) -->
@@ -224,7 +224,7 @@
             </div>
         </div>
         <div class="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
-    <h3 class="text-lg font-bold text-blue-700 border-b pb-2">Detail Penggunaan Listrik (Data Excel Client)</h3>
+    <h3 class="text-lg font-bold text-blue-700 border-b pb-2">Detail Penggunaan Listrik</h3>
 <!-- LWBP -->
    <div class="mt-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
     <h4 class="font-bold text-blue-800 mb-3">Rincian Tambahan Listrik</h4>
@@ -339,6 +339,22 @@
 </div>
 
 <script>
+
+    // ==========================================
+    // FUNGSI SET JAM OTOMATIS SAAT HALAMAN DIBUKA
+    // ==========================================
+    const jamInput = document.getElementById('jam');
+    
+    if (jamInput) {
+        const sekarang = new Date();
+        
+        // Ambil jam dan menit, tambahkan angka '0' di depan kalau angkanya di bawah 10 (misal: 08:05)
+        const jam = String(sekarang.getHours()).padStart(2, '0');
+        const menit = String(sekarang.getMinutes()).padStart(2, '0');
+        
+        // Masukkan ke dalam kolom input
+        jamInput.value = `${jam}:${menit}`;
+    }
 
     const petugasPerLokasi = @json($petugasPerLokasi);
     

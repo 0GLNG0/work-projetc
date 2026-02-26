@@ -60,14 +60,6 @@
                     </div>
                     
                     <!-- Filter Petugas -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            <i class="fas fa-user text-gray-500 mr-1"></i> Petugas
-                        </label>
-                        <input type="text" name="petugas" value="{{ request('petugas') }}" 
-                               placeholder="Nama petugas"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                    </div>
                 </div>
                 
                 <!-- BUTTON FILTER -->
@@ -104,54 +96,54 @@
 
     <!-- STATISTIK CARD -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 ">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class=" text-sm">Total Data Air</p>
-                    <p class="text-2xl font-bold">{{ $readings->where('meter_air', '!=', null)->count() }}</p>
-                </div>
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-water  text-2xl"></i>
-                </div>
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-blue-100 text-sm">Total Data Air</p>
+                <p class="text-2xl font-bold">{{ $totalAir }}</p>
             </div>
-        </div>
-        
-        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-4 ">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-yellow-100 text-sm">Total Data Listrik</p>
-                    <p class="text-2xl font-bold">{{ $readings->where('meter_listrik', '!=', null)->count() }}</p>
-                </div>
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-bolt text-2xl"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-4 ">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-purple-100 text-sm">Total Pemakaian Air</p>
-                    <p class="text-2xl font-bold">{{ number_format($readings->where('pemakaian_air', '!=', null)->sum('pemakaian_air'), 2) }} m³</p>
-                </div>
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-chart-line text-2xl"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-4 ">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-orange-100 text-sm">Total Pemakaian Listrik</p>
-                    <p class="text-2xl font-bold">{{ number_format($readings->where('meter_listrik', '!=', null)->sum('pemakaian_listrik'), 2) }} kWh</p>
-                </div>
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-chart-line text-2xl"></i>
-                </div>
+            <div class="bg-white/20 p-2 rounded-lg">
+                <i class="fas fa-water text-2xl"></i>
             </div>
         </div>
     </div>
+    
+    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-4 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-yellow-100 text-sm">Total Data Listrik</p>
+                <p class="text-2xl font-bold">{{ $totalListrik }}</p>
+            </div>
+            <div class="bg-white/20 p-2 rounded-lg">
+                <i class="fas fa-bolt text-2xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-4 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-purple-100 text-sm">Total Pemakaian Air</p>
+                <p class="text-2xl font-bold">{{ number_format($totalPemakaianAir, 2) }} m³</p>
+            </div>
+            <div class="bg-white/20 p-2 rounded-lg">
+                <i class="fas fa-chart-line text-2xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-4 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-orange-100 text-sm">Total Pemakaian Listrik</p>
+                <p class="text-2xl font-bold">{{ number_format($totalPemakaianListrik, 2) }} kWh</p>
+            </div>
+            <div class="bg-white/20 p-2 rounded-lg">
+                <i class="fas fa-chart-line text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- TABEL GABUNGAN -->
     <div class="space-y-8">
@@ -192,9 +184,6 @@
                                     {{ $item->pemakaian_listrik ? number_format($item->pemakaian_listrik, 2) : '-' }}
                                 </td>
                                 <td class="px-6 py-4">{{ $item->petugas }}</td>
-                                <td class="px-6 py-4">
-                                    <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-eye"></i></button>
-                                </td>
                                 <td>
 <form action="{{ route('admin.readings.destroyGabungan', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('⚠️ YAKIN INGIN MENGHAPUS?\n\nData Air dan Listrik untuk tanggal ini akan dihapus permanen.');">
     @csrf
