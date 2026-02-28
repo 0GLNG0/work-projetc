@@ -23,15 +23,23 @@
                         <option value="gangguan" {{ request('status_meter') == 'gangguan' ? 'selected' : '' }}>⚠️ Gangguan</option>
                     </select>
                 </div>
-                
+                @if(request('lokasi'))
+                    <input type="hidden" name="lokasi" value="{{ request('lokasi') }}">
+                @endif
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
                     <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full px-3 py-2 border rounded-lg">
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
                     <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bulan & Tahun</label>
+                    <input type="month" name="bulan" value="{{ request('bulan') }}" class="w-full px-3 py-2 border rounded-lg">
                 </div>
             </div>
             
@@ -50,20 +58,36 @@
     <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">Filter Lokasi</h3>
     
     <div class="flex flex-wrap gap-2">
-        <a href="{{ url()->current() }}" 
+        <a href="{{ request()->fullUrlWithQuery(['lokasi' => null]) }}" 
            class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
                   {{ !$lokasiAktif ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
             🌍 Semua Lokasi
         </a>
         
         @foreach($daftarLokasi as $lokasi)
-            <a href="{{ url()->current() }}?lokasi={{ urlencode($lokasi) }}" 
+            <a href="{{ request()->fullUrlWithQuery(['lokasi' => $lokasi]) }}" 
                class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
                       {{ $lokasiAktif == $lokasi ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
                 📍 {{ $lokasi }}
             </a>
         @endforeach
     </div>
+</div>
+
+    <!-- tidak untuk deploy -->
+     <!-- hanya untuk import data dari excel -->
+    <!-- <form action="{{ route('import.air') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+    @csrf
+    <div>
+        <label for="file_excel" class="block text-xs font-medium text-gray-700 mb-1">Upload Data (Excel)</label>
+        <input type="file" name="file_excel" id="file_excel" required
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    </div>
+    <button type="submit" class="mt-5 bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-sm font-semibold transition-colors">
+        <i class="fas fa-upload mr-1"></i> Import
+    </button>
+</form> -->
+<!-- tidak untuk deploy -->
 </div>
 
 <!-- TABEL DATA AIR -->
@@ -83,11 +107,8 @@
                 <table class="w-full text-sm text-left text-gray-500">
                     <thead class="text-xs text-gray-700 uppercase bg-blue-50 border-b">
                         <tr>
-                            <th scope="col" class="px-6 py-3">No</th>
                             <th scope="col" class="px-6 py-3">Tanggal</th>
-                            <th scope="col" class="px-6 py-3">Meter Awal</th>
-                            <th scope="col" class="px-6 py-3">Meter Akhir</th>
-                            <th scope="col" class="px-6 py-3">Pemakaian (m³)</th>
+                            <th scope="col" class="px-6 py-3">Meter </th>
                             <th scope="col" class="px-6 py-3">Status</th>
                             <th scope="col" class="px-6 py-3">Petugas</th>
                             <th scope="col" class="px-6 py-3">Foto</th>
@@ -97,12 +118,16 @@
                     <tbody>
                         @foreach($dataLokasi as $index => $item)
                             <tr class="bg-white border-b hover:bg-blue-50 transition">
-                                <td class="px-6 py-4 font-medium">{{ $index + 1 }}</td>
                                 <td class="px-6 py-4">{{ $item->tanggal->format('d/m/Y') }}</td>
-                                <td class="px-6 py-4">{{ $item->meter_awal ?? '-' }}</td>
-                                <td class="px-6 py-4">{{ number_format($item->meter_akhir, 2) }}</td>
-                                <td class="px-6 py-4 text-blue-600 font-bold">
-                                    {{ $item->pemakaian ? number_format($item->pemakaian, 2) : '-' }}
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="text-blue-600 font-bold">meter: {{ $item->meter_akhir ?? '-' }}</div>
+                                    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">M<sup>3</sup>: {{ $item->pemakaian ? number_format($item->pemakaian, 2) : '-' }}</div>
+                                    <div class="text-yellow-600 font-semibold text-xs mt-1 border-t pt-1">L/detik:  @if($item->pemakaian > 0)
+                                        {{ number_format(($item->pemakaian * 1000) / 86400, 2) }}
+                                        @else
+                                            0.00
+                                        @endif</div>
                                 </td>
                                 <td class="px-6 py-4">{{ $item->status_meter ?? '-' }}</td>
                                 <td class="px-6 py-4">{{ $item->petugas }}</td>

@@ -23,15 +23,23 @@
                         <option value="gangguan" {{ request('status_meter') == 'gangguan' ? 'selected' : '' }}>⚠️ Gangguan</option>
                     </select>
                 </div>
-                
+
+                                @if(request('lokasi'))
+                    <input type="hidden" name="lokasi" value="{{ request('lokasi') }}">
+                @endif
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
                     <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full px-3 py-2 border rounded-lg">
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
                     <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bulan & Tahun</label>
+                    <input type="month" name="bulan" value="{{ request('bulan') }}" class="w-full px-3 py-2 border rounded-lg">
                 </div>
             </div>
             
@@ -47,19 +55,19 @@
     </div>
 </div>
 
-
-<div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+    
+    <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
     <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">Filter Lokasi</h3>
     
     <div class="flex flex-wrap gap-2">
-        <a href="{{ url()->current() }}" 
+        <a href="{{ request()->fullUrlWithQuery(['lokasi' => null]) }}" 
            class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
                   {{ !$lokasiAktif ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
             🌍 Semua Lokasi
         </a>
         
         @foreach($daftarLokasi as $lokasi)
-            <a href="{{ url()->current() }}?lokasi={{ urlencode($lokasi) }}" 
+            <a href="{{ request()->fullUrlWithQuery(['lokasi' => $lokasi]) }}" 
                class="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 
                       {{ $lokasiAktif == $lokasi ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
                 📍 {{ $lokasi }}
@@ -67,7 +75,22 @@
         @endforeach
     </div>
 </div>
-<!-- TABEL DATA LISTRIK -->
+<!-- bukan untuk deploy -->
+<!-- <form action="{{ route('import.listrik') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+    @csrf
+    <div>
+        <label for="file_excel" class="block text-xs font-medium text-gray-700 mb-1">Upload Data (Excel)</label>
+        <input type="file" name="file_excel" id="file_excel" required
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+        <button type="submit" class="mt-5 bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-sm font-semibold transition-colors">
+            <i class="fas fa-upload mr-1"></i> Import
+        </button>
+    </form> -->
+    <!-- bukan untuk deploy -->
+<!-- ========================================================== -->
+    <!--=============== TABEL DATA LISTRIK ===============-->
+<!-- ========================================================== -->
 <div class="space-y-8">
     @forelse($groupedReadings as $lokasi => $dataLokasi)
         <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-200">
@@ -84,12 +107,9 @@
                 <table class="w-full text-sm text-left text-gray-500">
                     <thead class="text-xs text-gray-700 uppercase bg-yellow-50 border-b">
                         <tr>
-                            <th scope="col" class="px-6 py-3">No</th>
                             <th scope="col" class="px-6 py-3">Nomor ID</th>
                             <th scope="col" class="px-6 py-3">Tanggal</th>
-                            <th scope="col" class="px-6 py-3">Meter Awal</th>
-                            <th scope="col" class="px-6 py-3">Meter Akhir</th>
-                            <th scope="col" class="px-6 py-3">Pemakaian (kWh)</th>
+                            <th scope="col" class="px-6 py-3">Meter </th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LWBP</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WBP</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KVARH</th>
@@ -102,37 +122,33 @@
                     <tbody>
                         @foreach($dataLokasi as $index => $item)
                             <tr class="bg-white border-b hover:bg-blue-50 transition">
-                                <td class="px-6 py-4 font-medium">{{ $index + 1 }}</td>
                                 <td class="px-6 py-4">{{ $item->nomor_id }}</td>
                                 <td class="px-6 py-4">{{ $item->tanggal->format('d/m/Y') }}</td>
-                                <td class="px-6 py-4">{{ $item->meter_awal ?? '-' }}</td>
-                                <td class="px-6 py-4">{{ number_format($item->meter_akhir, 2) }}</td>
-                                <td class="px-6 py-4 text-blue-600 font-bold">
-                                    {{ $item->pemakaian ? number_format($item->pemakaian, 2) : '-' }}
-                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="text-blue-600 font-bold">meter: {{ $item->meter_akhir ?? '-' }}</div>
+                                <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">KwH: {{ $item->pemakaian ? number_format($item->pemakaian, 2) : '-' }}</div>
+                            </td>
                                 <td class="px-4 py-4 whitespace-nowrap text-sm">
-    <div class="text-gray-500 text-xs">Awal: {{ $item->lwbp_awal ?? 0 }}</div>
-    <div class="font-bold text-blue-600">Akhir: {{ $item->lwbp_akhir ?? 0 }}</div>
-    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">
-        Hasil: {{ $item->pemakaian_lwbp ?? 0 }}
-    </div>
-</td>
+                                    <div class="font-bold text-blue-600">LWBP: {{ $item->lwbp_akhir ?? 0 }}</div>
+                                    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">
+                                        Hasil: {{ $item->pemakaian_lwbp ?? 0 }}
+                                    </div>
+                                </td>
 
-<td class="px-4 py-4 whitespace-nowrap text-sm">
-    <div class="text-gray-500 text-xs">Awal: {{ $item->wbp_awal ?? 0 }}</div>
-    <div class="font-bold text-blue-600">Akhir: {{ $item->wbp_akhir ?? 0 }}</div>
-    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">
-        Hasil: {{ $item->pemakaian_wbp ?? 0 }}
-    </div>
-</td>
+                                <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                    <div class="font-bold text-blue-600">WBP: {{ $item->wbp_akhir ?? 0 }}</div>
+                                    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">
+                                        Hasil: {{ $item->pemakaian_wbp ?? 0 }}
+                                    </div>
+                                </td>
 
-<td class="px-4 py-4 whitespace-nowrap text-sm">
-    <div class="text-gray-500 text-xs">Awal: {{ $item->kvarh_awal ?? 0 }}</div>
-    <div class="font-bold text-purple-600">Akhir: {{ $item->kvarh_akhir ?? 0 }}</div>
-    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">
-        Hasil: {{ $item->pemakaian_kvarh ?? 0 }}
-    </div>
-</td>   
+                                <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                    <div class="font-bold text-purple-600">KVARH: {{ $item->kvarh_akhir ?? 0 }}</div>
+                                    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">
+                                        Hasil: {{ $item->pemakaian_kvarh ?? 0 }}
+                                    </div>
+                                </td>   
                                 <td class="px-6 py-4">{{ $item->status_meter ?? '-' }}</td>
                                 <td class="px-6 py-4">{{ $item->petugas }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">

@@ -45,6 +45,12 @@
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                     
+                    <!-- filter bulan tahun -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bulan & Tahun</label>
+                    <input type="month" name="bulan" value="{{ request('bulan') }}" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+                    
                     <!-- Filter Status -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -177,21 +183,27 @@
                             <tr class="bg-white border-b hover:bg-gray-50 transition">
                                 <td class="px-6 py-4 font-medium">{{ $index + 1 }}</td>
                                 <td class="px-6 py-4">{{ date('d/m/Y', strtotime($item->tanggal)) }}</td>
-                                <td class="px-6 py-4 text-blue-600 font-semibold">
-                                    {{ $item->pemakaian_air ? number_format($item->pemakaian_air, 2) : '-' }}
-                                </td>
-                                <td class="px-6 py-4 text-yellow-600 font-semibold">
-                                    {{ $item->pemakaian_listrik ? number_format($item->pemakaian_listrik, 2) : '-' }}
-                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="text-blue-600 font-bold">meter: {{ $item->meter_akhir_air ?? '-' }}</div>
+                                    <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">M<sup>3</sup>: {{ $item->pemakaian_air ? number_format($item->pemakaian_air, 2) : '-' }}</div>
+                                    <div class="text-yellow-600 font-semibold text-xs mt-1 border-t pt-1">L/detik:  @if($item->pemakaian_air > 0)
+                                        {{ number_format(($item->pemakaian_air * 1000) / 86400, 2) }}
+                                        @else
+                                            0.00
+                                        @endif</div>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="text-blue-600 font-bold">meter: {{ $item->meter_akhir_listrik ?? '-' }}</div>
+                                <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">KwH: {{ $item->pemakaian_listrik ? number_format($item->pemakaian_listrik, 2) : '-' }}</div>
+                            </td>
                                 <td class="px-6 py-4">{{ $item->petugas }}</td>
                                 <td>
-<form action="{{ route('admin.readings.destroyGabungan', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('⚠️ YAKIN INGIN MENGHAPUS?\n\nData Air dan Listrik untuk tanggal ini akan dihapus permanen.');">
-    @csrf
-    @method('DELETE')
-    <button type="submit" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded-md text-sm font-semibold transition-colors duration-200">
-        <i class="fas fa-trash-alt mr-1"></i> Hapus
-    </button>
-</form>
+                        <form action="{{ route('admin.readings.destroyGabungan', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('⚠️ YAKIN INGIN MENGHAPUS?\n\nData Air dan Listrik untuk tanggal ini akan dihapus permanen.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded-md text-sm font-semibold transition-colors duration-200">
+                                <i class="fas fa-trash-alt mr-1"></i> Hapus
+                            </button>
+                        </form>
                             </tr>
                         @endforeach
                     </tbody>

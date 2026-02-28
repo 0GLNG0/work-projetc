@@ -1,47 +1,67 @@
 @extends('layouts.app')
 
-@section('title', 'Export Data Meter')
+@section('title', 'Pusat Unduh Laporan')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
     
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fas fa-file-export text-green-600 mr-3"></i>
-            Export Data Meter
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-extrabold text-gray-800 flex items-center justify-center">
+            <i class="fas fa-file-export text-green-600 mr-3"></i> Pusat Unduh Laporan
         </h1>
-        <p class="text-gray-600 mt-1">Unduh rekapitulasi data meter air dan listrik ke dalam format Excel.</p>
+        <p class="text-gray-600 mt-2">Pilih format laporan Excel yang ingin Anda unduh sesuai kebutuhan.</p>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-            <h3 class="text-lg font-semibold text-white flex items-center">
-                <i class="fas fa-file-excel mr-2"></i>
-                Tarik Laporan Excel
-            </h3>
-        </div>
-
-        <div class="p-6 md:p-8">
-            <p class="text-gray-600 mb-6">
-                Klik tombol di bawah ini untuk mengunduh seluruh data yang telah tercatat.
-            </p>
-
-            <div class="flex flex-col sm:flex-row gap-4 items-center">
-                
-                <a href="{{ route('export.excel', ['lokasi' => request('lokasi')]) }}" 
-                   class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200">
-                    <i class="fas fa-download mr-2"></i> Export ke Excel
-                </a>
-
-                <a href="{{ route('admin.readings.air') }}" 
-                   class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-200">
-                    Batal
-                </a>
-                
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Laporan Meter Air</h3>
+                <i class="fas fa-tint text-blue-500 text-2xl"></i>
             </div>
+            <p class="text-sm text-gray-600 mb-6">Unduh data rekap khusus pencatatan meter air lengkap dengan hitungan debit (Ltr/Dtk).</p>
+            <a href="{{ route('export.air', ['lokasi' => request('lokasi')]) }}" class="block w-full text-center bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-semibold py-2.5 rounded-lg transition-colors">
+                ⬇️ Download Excel
+            </a>
         </div>
-        
+
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Laporan Meter Listrik</h3>
+                <i class="fas fa-bolt text-yellow-500 text-2xl"></i>
+            </div>
+            <p class="text-sm text-gray-600 mb-6">Unduh data khusus pencatatan meter listrik dengan rincian LWBP, WBP, dan KVARH.</p>
+            <a href="{{ route('export.listrik', ['lokasi' => request('lokasi')]) }}" class="block w-full text-center bg-yellow-50 text-yellow-700 hover:bg-yellow-500 hover:text-white font-semibold py-2.5 rounded-lg transition-colors">
+                ⬇️ Download Excel
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border-l-4 border-green-500">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Laporan Gabungan Harian</h3>
+                <i class="fas fa-file-excel text-green-500 text-2xl"></i>
+            </div>
+            <p class="text-sm text-gray-600 mb-6">Laporan komplit Air & Listrik.</p>
+            <a href="{{ route('export.excel', ['lokasi' => request('lokasi')]) }}" class="block w-full text-center bg-green-50 text-green-700 hover:bg-green-600 hover:text-white font-semibold py-2.5 rounded-lg transition-colors">
+                ⬇️ Download Excel
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border-l-4 border-purple-500">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Rekapitulasi Bulanan</h3>
+                <i class="fas fa-calendar-check text-purple-500 text-2xl"></i>
+            </div>
+            <p class="text-sm text-gray-600 mb-6">Unduh total akumulasi pemakaian per bulan untuk keperluan evaluasi dan manajemen.</p>
+            <a href="{{ route('export.bulanan', ['lokasi' => request('lokasi')]) }}" class="block w-full text-center bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white font-semibold py-2.5 rounded-lg transition-colors">
+                ⬇️ Download Excel
+            </a>
+        </div>
+
+        <a href="{{route('admin.readings.gabungan')}}" class="block w-full text-center bg-gray-50 text-gray-700 hover:bg-gray-600 hover:text-white font-semibold py-2.5 rounded-lg transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Kembali ke Data Pembacaan
+        </a>
+
     </div>
 </div>
 @endsection

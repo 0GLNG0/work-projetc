@@ -42,9 +42,25 @@ public function readingsAir(Request $request)
         if ($request->filled('tanggal_selesai')) {
             $query->whereDate('tanggal', '<=', $request->tanggal_selesai);
         }
+        // Filter Tanggal
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal', '>=', $request->tanggal_mulai);
+        }
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal', '<=', $request->tanggal_selesai);
+        }
 
+        // PASTIKAN FILTER BULAN INI ADA DI FUNGSI LISTRIK!
+        if ($request->filled('bulan')) {
+            $pecah = explode('-', $request->bulan);
+            if (count($pecah) == 2) {
+                // Di Listrik, panggilnya langsung 'tanggal' (nggak usah 'a.tanggal')
+                $query->whereYear('tanggal', $pecah[0])
+                      ->whereMonth('tanggal', $pecah[1]);
+            }
+        }
         // AMBIL DATA & KELOMPOKKAN
-        $readings = $query->orderBy('tanggal', 'desc')->get();
+        $readings = $query->orderBy('tanggal', 'asc')->get();
         $groupedReadings = $readings->groupBy('lokasi'); // Ubah ke 'lokasi' biar seragam
         
         // AMBIL DAFTAR LOKASI UNTUK TOMBOL (Otomatis dari database)
@@ -52,6 +68,7 @@ public function readingsAir(Request $request)
 
         // KIRIM KE VIEW (Tambah lokasiAktif dan daftarLokasi)
         return view('admin.readings-air', compact('readings', 'groupedReadings', 'lokasiAktif', 'daftarLokasi'));
+
     }
 
     public function readingsListrik(Request $request)
@@ -68,8 +85,25 @@ public function readingsAir(Request $request)
         if ($request->filled('tanggal_mulai')) $query->whereDate('tanggal', '>=', $request->tanggal_mulai);
         if ($request->filled('tanggal_selesai')) $query->whereDate('tanggal', '<=', $request->tanggal_selesai);
         if ($request->filled('petugas')) $query->where('petugas', 'like', '%' . $request->petugas . '%');
+        // Filter Tanggal
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal', '>=', $request->tanggal_mulai);
+        }
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal', '<=', $request->tanggal_selesai);
+        }
 
-        $readings = $query->orderBy('tanggal', 'desc')->get();
+        // PASTIKAN FILTER BULAN INI ADA DI FUNGSI LISTRIK!
+        if ($request->filled('bulan')) {
+            $pecah = explode('-', $request->bulan);
+            if (count($pecah) == 2) {
+                // Di Listrik, panggilnya langsung 'tanggal' (nggak usah 'a.tanggal')
+                $query->whereYear('tanggal', $pecah[0])
+                      ->whereMonth('tanggal', $pecah[1]);
+            }
+        }
+
+        $readings = $query->orderBy('tanggal', 'asc')->get();
         $groupedReadings = $readings->groupBy('lokasi'); 
         
         $daftarLokasi = \App\Models\MeterListrik::select('lokasi')->whereNotNull('lokasi')->distinct()->pluck('lokasi');
@@ -77,45 +111,32 @@ public function readingsAir(Request $request)
         return view('admin.readings-listrik', compact('readings', 'groupedReadings', 'lokasiAktif', 'daftarLokasi'));
     }
 
-    public function readingsGabungan(Request $request)
+public function readingsGabungan(Request $request)
     {
         $lokasiAktif = $request->lokasi;
 
         // =======================================================
         // 1. DATA STATISTIK UNTUK CARD DI ATAS TABEL
         // =======================================================
-        // A. Hitung Jumlah Baris Data (Berapa kali input)
         $totalAir = \App\Models\MeterAir::count();
         $totalListrik = \App\Models\MeterListrik::count();
-        
-        // B. Hitung Total Pemakaian Keseluruhan (Sum / Tambah-tambahan)
         $totalPemakaianAir = \App\Models\MeterAir::sum('pemakaian');
         $totalPemakaianListrik = \App\Models\MeterListrik::sum('pemakaian');
-
-        // C. Data Masuk Hari Ini
         $todayAir = \App\Models\MeterAir::whereDate('tanggal', today())->count();
         $todayListrik = \App\Models\MeterListrik::whereDate('tanggal', today())->count();
-        $totalAir = \App\Models\MeterAir::count();
-        $totalListrik = \App\Models\MeterListrik::count();
-        $todayAir = \App\Models\MeterAir::whereDate('tanggal', today())->count();
-        $todayListrik = \App\Models\MeterListrik::whereDate('tanggal', today())->count();
-        $lokasiAktif = $request->lokasi;
 
-        // 1. JOIN TABEL AIR DAN LISTRIK 
-$query = \Illuminate\Support\Facades\DB::table('meter_air_readings as a')
+        // =======================================================
+        // 2. QUERY UTAMA: GABUNGKAN TABEL AIR DAN LISTRIK
+        // =======================================================
+        $query = \Illuminate\Support\Facades\DB::table('meter_air_readings as a')
             ->select(
                 'a.id', 'a.tanggal', 'a.lokasi', 'a.petugas',
-                
-                // --- KEMBALIKAN NAMA ASLI KOLOM AIR ---
                 'a.meter_awal as meter_awal_air',
                 'a.meter_akhir as meter_akhir_air',
-                'a.pemakaian as pemakaian_air', // <--- INI DIA PELAKUNYA!
-                
-                // --- ALIAS BUAT EXCEL/PDF JAGA-JAGA ---
+                'a.pemakaian as pemakaian_air',
                 'a.meter_akhir as meter_pompa', 
                 'a.pemakaian as hasil_m3',
                 
-                // --- KEMBALIKAN KOLOM LISTRIK LENGKAP ---
                 'l.lwbp_awal', 'l.lwbp_akhir', 'l.pemakaian_lwbp',
                 'l.wbp_awal', 'l.wbp_akhir', 'l.pemakaian_wbp',
                 'l.kvarh_awal', 'l.kvarh_akhir', 'l.pemakaian_kvarh',
@@ -130,26 +151,51 @@ $query = \Illuminate\Support\Facades\DB::table('meter_air_readings as a')
                      ->on('a.lokasi', '=', 'l.lokasi');
             });
 
-        // 2. FILTER LOKASI DARI TOMBOL
+        // =======================================================
+        // 3. PASUKAN FILTER
+        // =======================================================
+        
+        // A. Filter Lokasi
         if ($lokasiAktif) {
             $query->where('a.lokasi', $lokasiAktif);
         }
 
-        // (Opsional) Filter tanggal kalau kamu masih pakai
-        if ($request->filled('tanggal_mulai')) $query->whereDate('a.tanggal', '>=', $request->tanggal_mulai);
-        if ($request->filled('tanggal_selesai')) $query->whereDate('a.tanggal', '<=', $request->tanggal_selesai);
+        // B. Filter Tanggal Mulai & Selesai
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('a.tanggal', '>=', $request->tanggal_mulai);
+        }
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('a.tanggal', '<=', $request->tanggal_selesai);
+        }
 
-        // 3. AMBIL DATA
-        $readings = $query->orderBy('a.tanggal', 'desc')->get();
-        
-        // 4. KELOMPOKKAN BERDASARKAN LOKASI
-        // Pakai collect() karena ini data dari DB Builder, bukan dari Eloquent Model
+        // C. Filter Bulan (Sudah Diperbaiki!)
+        if ($request->filled('bulan')) {
+            $pecah = explode('-', $request->bulan);
+            if (count($pecah) == 2) {
+                $tahun = $pecah[0];
+                $bulan = $pecah[1];
+                
+                // PENTING: Harus pakai a.tanggal biar database nggak bingung
+                $query->whereYear('a.tanggal', $tahun)
+                      ->whereMonth('a.tanggal', $bulan);
+            }
+        }
+
+        // =======================================================
+        // 4. AMBIL DATA DAN KELOMPOKKAN
+        // =======================================================
+        $readings = $query->orderBy('a.tanggal', 'asc')->get();
         $groupedReadings = collect($readings)->groupBy('lokasi');
         
+        // =======================================================
         // 5. AMBIL DAFTAR LOKASI BUAT TOMBOL FILTER
+        // =======================================================
         $daftarLokasi = \Illuminate\Support\Facades\DB::table('meter_air_readings')
-                        ->whereNotNull('lokasi')->distinct()->pluck('lokasi');
+            ->whereNotNull('lokasi')->distinct()->pluck('lokasi');
 
+        // =======================================================
+        // 6. LEMPAR KE HALAMAN TAMPILAN (Paling Bawah!)
+        // =======================================================
         return view('admin.readings-gabungan', compact(
             'readings', 'groupedReadings', 'lokasiAktif', 'daftarLokasi', 
             'totalAir', 'totalListrik', 'totalPemakaianAir', 'totalPemakaianListrik', 
@@ -233,4 +279,47 @@ public function destroyGabungan($id)
 
         return redirect()->back()->with('error', '❌ Data tidak ditemukan!');
     }   
+    public function exportAir(Request $request)
+    {
+        $lokasi = $request->lokasi;
+        $namaFile = 'Laporan_Meter_Air_' . ($lokasi ?? 'Semua_Lokasi') . '_' . date('d-m-Y') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ExportAir($lokasi), $namaFile);
+    }
+
+    public function exportListrik(Request $request)
+    {
+        $lokasi = $request->lokasi;
+        $namaFile = 'Laporan_Meter_Listrik_' . ($lokasi ?? 'Semua_Lokasi') . '_' . date('d-m-Y') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ExportListrik($lokasi), $namaFile);
+    }
+    public function exportBulanan(Request $request)
+    {
+        $lokasi = $request->lokasi;
+        $namaFile = 'Rekap_Bulanan_' . ($lokasi ?? 'Semua_Lokasi') . '_' . date('d-m-Y') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ExportBulanan($lokasi), $namaFile);
+    }
+
+    public function importAir(Request $request)
+    {
+        // 1. Validasi pastikan yang diupload beneran Excel
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        // 2. Proses sedot data pakai class Import yang barusan kita buat!
+        \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ImportMeterAir, $request->file('file_excel'));
+
+        // 3. Kembalikan ke halaman sebelumnya dengan pesan sukses
+        return redirect()->back()->with('success', '✨ Ribuan Data Air sukses bersinar masuk ke Database!');
+    }
+    public function importListrik(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ImportMeterListrik, $request->file('file_excel'));
+
+        return redirect()->back()->with('success', '⚡ Ribuan Data Listrik sukses tersetrum masuk ke Database!');
+    }
 }

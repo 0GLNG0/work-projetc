@@ -110,3 +110,11 @@ Route::prefix('export')->name('export.')->group(function () {
     });
     Route::get('/export-laporan', [App\Http\Controllers\AdminController::class, 'exportExcel'])->name('export.excel');
     Route::delete('/admin/readings-gabungan/{id}', [App\Http\Controllers\AdminController::class, 'destroyGabungan'])->name('admin.readings.destroyGabungan');
+
+    Route::get('/export/air', [App\Http\Controllers\AdminController::class, 'exportAir'])->name('export.air');
+    Route::get('/export/listrik', [App\Http\Controllers\AdminController::class, 'exportListrik'])->name('export.listrik');
+    Route::get('/export/bulanan', [App\Http\Controllers\AdminController::class, 'exportBulanan'])->name('export.bulanan');
+
+    // export gabungan data dari excel
+    Route::post('/import/air', [App\Http\Controllers\AdminController::class, 'importAir'])->name('import.air');
+    Route::post('/import/listrik', [App\Http\Controllers\AdminController::class, 'importListrik'])->name('import.listrik');
