@@ -84,28 +84,6 @@ Route::prefix('export')->name('export.')->group(function () {
     Route::get('/excel-listrik-mingguan', [ExportController::class, 'excelListrikMingguan'])->name('excel.listrik.mingguan');
     Route::get('/excel-listrik-bulanan', [ExportController::class, 'excelListrikBulanan'])->name('excel.listrik.bulanan');
     Route::get('/excel-listrik-tahunan', [ExportController::class, 'excelListrikTahunan'])->name('excel.listrik.tahunan');
-    
-    // ===== EXPORT MODEL LAMA (MeterReading) =====
-    // Preview HTML
-    Route::get('/preview-harian', [ExportController::class, 'previewHarian'])->name('preview.harian');
-    Route::get('/preview-bulanan', [ExportController::class, 'previewBulanan'])->name('preview.bulanan');
-    Route::get('/preview-semua', [ExportController::class, 'previewSemua'])->name('preview.semua');
-    
-    // Preview PDF
-    Route::get('/preview-pdf-harian', [ExportController::class, 'previewPdfHarian'])->name('preview-pdf.harian');
-    Route::get('/preview-pdf-bulanan', [ExportController::class, 'previewPdfBulanan'])->name('preview-pdf.bulanan');
-    Route::get('/preview-pdf-semua', [ExportController::class, 'previewPdfSemua'])->name('preview-pdf.semua');
-    
-    // Download PDF
-    Route::get('/pdf-harian', [ExportController::class, 'pdfHarian'])->name('pdf.harian');
-    Route::get('/pdf-bulanan', [ExportController::class, 'pdfBulanan'])->name('pdf.bulanan');
-    Route::get('/pdf-semua', [ExportController::class, 'pdfSemua'])->name('pdf.semua');
-    
-    // Excel Model Lama
-    Route::get('/excel-semua', [ExportController::class, 'excelSemua'])->name('excel.semua');
-    Route::get('/excel-harian', [ExportController::class, 'excelHarian'])->name('excel.harian');
-    Route::get('/excel-bulanan', [ExportController::class, 'excelBulanan'])->name('excel.bulanan');
-    Route::get('/excel-tahunan', [ExportController::class, 'excelTahunan'])->name('excel.tahunan');
 
     });
     Route::get('/export-laporan', [App\Http\Controllers\AdminController::class, 'exportExcel'])->name('export.excel');

@@ -13,13 +13,20 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void
+public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // 1. Panggil Seeder Lokasi (Rumus Excel Liter/Detik)
+        $this->call([
+            LokasiSeeder::class,
         ]);
+
+        // 2. Buat User secara MANUAL (Tanpa Factory/Fake) [cite: 2026-02-12]
+        \App\Models\User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => bcrypt('password123'), // Jangan lupa kasih password [cite: 2026-02-12]
+            ]
+        );
     }
 }

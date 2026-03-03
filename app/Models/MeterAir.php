@@ -125,5 +125,10 @@ public static $lokasiOptions = [
             ->latest('tanggal')
             ->first();
     }
+    public function dataLokasi()
+{
+    // Mengasumsikan kolom 'lokasi' di MeterAir isinya sama dengan 'nama_lokasi' di tabel Lokasi
+    return $this->belongsTo(Lokasi::class, 'lokasi', 'nama_lokasi');
+}
     
 }

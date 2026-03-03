@@ -103,6 +103,18 @@ public function getPreviousData(Request $request)
 
     public function storeListrik(Request $request)
     {
+        if ($lastAir) {
+            $dataAir['meter_awal'] = $lastAir->meter_akhir;
+            $dataAir['pemakaian'] = round($request->meter_air - $lastAir->meter_akhir, 2);
+
+            // ===== TAMBAHKAN LOGIKA LITER/DETIK DI SINI =====
+            // 1. Cari data "Waktu Aktif Pompa" dari tabel Lokasi
+            $lokasiInfo = \App\Models\Lokasi::where('nama_lokasi', $request->lokasi)->first();
+            $waktuAktif = $lokasiInfo ? $lokasiInfo->waktu_aktif_pompa : 1; // Default 1 agar tidak error pembagian nol
+
+            // 2. Terapkan rumus Excel: (Pemakaian / 3600 / Waktu Aktif) * 100
+            $dataAir['liter_per_detik'] = round(($dataAir['pemakaian'] / 3600 / $waktuAktif) * 100, 4);
+        }
         // Mirip dengan storeAir, ganti MeterAir jadi MeterListrik
         $validated = $request->validate([
             'lokasi' => 'required|string|in:' . implode(',', MeterListrik::getAllLokasiOptions()),
@@ -151,22 +163,22 @@ public function getPreviousData(Request $request)
         // Validasi
         $validated = $request->validate([
             'lokasi' => 'required|string',
-                'tanggal' => 'required|date',
-                'jam' => 'required',
-                'petugas' => 'required|string',
-                'meter_air' => 'required|numeric|min:0',
-                'meter_listrik' => 'required|numeric|min:0',
-                'nomor_id_listrik' => 'required|string',
-                
-                // TAMBAHAN VALIDASI (nullable biar kalau kosong nggak error)
-                'lwbp_akhir' => 'nullable|numeric|min:0',
-                'wbp_akhir' => 'nullable|numeric|min:0',
-                'kvarh_akhir' => 'nullable|numeric|min:0',
-                
-                'status_meter_air' => 'nullable|string',
-                'status_meter_listrik' => 'nullable|string',
-                'keterangan_air' => 'nullable|string',
-                'keterangan_listrik' => 'nullable|string',
+            'tanggal' => 'required|date',
+            'jam' => 'required',
+            'petugas' => 'required|string',
+            'meter_air' => 'required|numeric|min:0',
+            'meter_listrik' => 'required|numeric|min:0',
+            'nomor_id_listrik' => 'required|string',
+            
+            // TAMBAHAN VALIDASI (nullable)
+            'lwbp_akhir' => 'nullable|numeric|min:0',
+            'wbp_akhir' => 'nullable|numeric|min:0',
+            'kvarh_akhir' => 'nullable|numeric|min:0',
+            
+            'status_meter_air' => 'nullable|string',
+            'status_meter_listrik' => 'nullable|string',
+            'keterangan_air' => 'nullable|string',
+            'keterangan_listrik' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -191,12 +203,25 @@ public function getPreviousData(Request $request)
             $dataAir['pemakaian'] = round($request->meter_air - $lastAir->meter_akhir, 2);
         }
         
+        // ===== LOGIKA HITUNG LITER/DETIK DIMULAI DI SINI =====
+        $pemakaianAir = $dataAir['pemakaian'] ?? 0;
+
+        $lokasiInfo = \App\Models\Lokasi::where('nama_lokasi', $request->lokasi)->first();
+        $waktuAktif = $lokasiInfo ? $lokasiInfo->waktu_aktif_pompa : 24;
+
+        // Rumus Mutlak Excel (Pemakaian / (3600 * Jam Aktif)) * 100
+        if ($waktuAktif > 0) {
+            $dataAir['liter_per_detik'] = round(($pemakaianAir / (3600 * $waktuAktif)) * 100, 2);
+        } else {
+            $dataAir['liter_per_detik'] = 0;
+        }
+        // ===== LOGIKA LITER/DETIK SELESAI =====
+
         // Upload foto air jika ada
-if ($request->hasFile('foto_air')) {
-    $path = $request->file('foto_air')->store('meter-air/' . date('Y/m'), 'public');
-    $dataAir['foto'] = $path;
-}
-        
+        if ($request->hasFile('foto_air')) {
+            $path = $request->file('foto_air')->store('meter-air/' . date('Y/m'), 'public');
+            $dataAir['foto'] = $path;
+        }
         $savedAir = MeterAir::create($dataAir);
         
         // ===== CEK DATA LISTRIK =====
@@ -204,45 +229,36 @@ if ($request->hasFile('foto_air')) {
                 ->latest('tanggal')
                 ->first();
                 
-            $dataListrik = [
-                'lokasi' => $request->lokasi,
-                'tanggal' => $request->tanggal,
-                'jam' => $request->jam,
-                'nomor_id' => $request->nomor_id_listrik,
-                'meter_akhir' => $request->meter_listrik,
-                
-                // Masukkan input form ke data listrik
-                'lwbp_akhir' => $request->lwbp_akhir,
-                'wbp_akhir' => $request->wbp_akhir,
-                'kvarh_akhir' => $request->kvarh_akhir,
-                
-                'status_meter' => $request->status_meter_listrik ?? 'normal',
-                'keterangan' => $request->keterangan_listrik,
-                'petugas' => $request->petugas,
-            ];
+        $dataListrik = [
+            'lokasi' => $request->lokasi,
+            'tanggal' => $request->tanggal,
+            'jam' => $request->jam,
+            'nomor_id' => $request->nomor_id_listrik,
+            'meter_akhir' => $request->meter_listrik,
+            'lwbp_akhir' => $request->lwbp_akhir,
+            'wbp_akhir' => $request->wbp_akhir,
+            'kvarh_akhir' => $request->kvarh_akhir,
+            'status_meter' => $request->status_meter_listrik ?? 'normal',
+            'keterangan' => $request->keterangan_listrik,
+            'petugas' => $request->petugas,
+        ];
+
         if ($lastListrik) {
-                // Listrik Utama
-                $dataListrik['meter_awal'] = $lastListrik->meter_akhir;
-                $dataListrik['pemakaian'] = round($request->meter_listrik - $lastListrik->meter_akhir, 2);
-                
-                // Logika LWBP
-                $dataListrik['lwbp_awal'] = $lastListrik->lwbp_akhir;
-                $dataListrik['pemakaian_lwbp'] = round((float)$request->lwbp_akhir - (float)$lastListrik->lwbp_akhir, 2);
-                
-                // Logika WBP
-                $dataListrik['wbp_awal'] = $lastListrik->wbp_akhir;
-                $dataListrik['pemakaian_wbp'] = round((float)$request->wbp_akhir - (float)$lastListrik->wbp_akhir, 2);
-                
-                // Logika KVARH
-                $dataListrik['kvarh_awal'] = $lastListrik->kvarh_akhir;
-                $dataListrik['pemakaian_kvarh'] = round((float)$request->kvarh_akhir - (float)$lastListrik->kvarh_akhir, 2);
-            }
+            $dataListrik['meter_awal'] = $lastListrik->meter_akhir;
+            $dataListrik['pemakaian'] = round($request->meter_listrik - $lastListrik->meter_akhir, 2);
+            $dataListrik['lwbp_awal'] = $lastListrik->lwbp_akhir;
+            $dataListrik['pemakaian_lwbp'] = round((float)$request->lwbp_akhir - (float)$lastListrik->lwbp_akhir, 2);
+            $dataListrik['wbp_awal'] = $lastListrik->wbp_akhir;
+            $dataListrik['pemakaian_wbp'] = round((float)$request->wbp_akhir - (float)$lastListrik->wbp_akhir, 2);
+            $dataListrik['kvarh_awal'] = $lastListrik->kvarh_akhir;
+            $dataListrik['pemakaian_kvarh'] = round((float)$request->kvarh_akhir - (float)$lastListrik->kvarh_akhir, 2);
+        }
         
         // Upload foto listrik jika ada
-if ($request->hasFile('foto_listrik')) {
-    $path = $request->file('foto_listrik')->store('meter-listrik/' . date('Y/m'), 'public');
-    $dataListrik['foto'] = $path;
-}
+        if ($request->hasFile('foto_listrik')) {
+            $path = $request->file('foto_listrik')->store('meter-listrik/' . date('Y/m'), 'public');
+            $dataListrik['foto'] = $path;
+        }
         
         $savedListrik = MeterListrik::create($dataListrik);
         
@@ -258,8 +274,6 @@ if ($request->hasFile('foto_listrik')) {
             
     } catch (\Exception $e) {
         DB::rollBack();
-        
-        // Tampilkan error detail
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => 'Gagal: ' . $e->getMessage() . ' di file ' . $e->getFile() . ' baris ' . $e->getLine()]);

@@ -76,7 +76,7 @@
     </div>
 </div>
 <!-- bukan untuk deploy -->
-<!-- <form action="{{ route('import.listrik') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+<form action="{{ route('import.listrik') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
     @csrf
     <div>
         <label for="file_excel" class="block text-xs font-medium text-gray-700 mb-1">Upload Data (Excel)</label>
@@ -86,7 +86,7 @@
         <button type="submit" class="mt-5 bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-sm font-semibold transition-colors">
             <i class="fas fa-upload mr-1"></i> Import
         </button>
-    </form> -->
+    </form>
     <!-- bukan untuk deploy -->
 <!-- ========================================================== -->
     <!--=============== TABEL DATA LISTRIK ===============-->

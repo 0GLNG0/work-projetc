@@ -87,14 +87,10 @@ class ExportAirSheet implements FromCollection, WithHeadings, WithMapping, WithT
 
     public function map($row): array
     {
-       $liter_per_detik = 0;
-        if ($row->pemakaian > 0) {
-            $liter_per_detik = round(($row->pemakaian * 1000) / 86400, 2);
-        }
         return [
             date('d-M-Y', strtotime($row->tanggal)),
             $row->meter_akhir,
-            $liter_per_detik,
+            $row->liter_per_detik, // << LANGSUNG TARIK DARI DATABASE SAJA!
             $row->pemakaian,
             $row->lokasi,
             $row->petugas,

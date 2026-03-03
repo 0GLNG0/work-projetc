@@ -67,16 +67,14 @@
         </div>
         
         <!-- Petugas (DROPDOWN DINAMIS) -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                <i class="fas fa-user text-gray-500 mr-1"></i>
-                Nama Petugas <span class="text-red-500">*</span>
-            </label>
-            <select name="petugas" id="petugasSelect" required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">-- Pilih Lokasi Dulu --</option>
-            </select>
-        </div>
+        <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+        <i class="fas fa-user text-gray-500 mr-1"></i> Nama Petugas <span class="text-red-500">*</span>
+    </label>
+    <select name="petugas" id="petugasSelect" required class="w-full px-4 py-3 border rounded-lg bg-gray-50">
+        <option value="">-- Pilih Lokasi Dulu --</option>
+    </select>
+</div>
     </div>
     
     <!-- Info Data Kemarin -->
@@ -356,31 +354,45 @@
         jamInput.value = `${jam}:${menit}`;
     }
 
-    const petugasPerLokasi = @json($petugasPerLokasi);
-    
+   const petugasPerLokasi = @json($petugasPerLokasi);
     const lokasiSelect = document.getElementById('lokasiSelect');
     const petugasSelect = document.getElementById('petugasSelect');
-    
-    // Fungsi untuk mengupdate dropdown petugas berdasarkan lokasi
+
     function updatePetugasDropdown() {
         const lokasi = lokasiSelect.value;
         
-        // Reset dropdown
+        // Reset dropdown petugas
         petugasSelect.innerHTML = '<option value="">-- Pilih Petugas --</option>';
-        petugasSelect.disabled = !lokasi;
         
         if (lokasi && petugasPerLokasi[lokasi]) {
-            // Tambahkan opsi petugas
+            // Aktifkan dropdown
+            petugasSelect.disabled = false;
+            
+            // Tambahkan opsi petugas berdasarkan data array
             petugasPerLokasi[lokasi].forEach(petugas => {
                 const option = document.createElement('option');
                 option.value = petugas;
                 option.textContent = petugas;
+                
+                // OTOMATIS PILIH jika hanya ada 1 petugas di lokasi tersebut
+                if (petugasPerLokasi[lokasi].length === 1) {
+                    option.selected = true;
+                }
+                
                 petugasSelect.appendChild(option);
             });
         } else {
+            // Jika lokasi belum dipilih
             petugasSelect.innerHTML = '<option value="">-- Pilih Lokasi Dulu --</option>';
+            petugasSelect.disabled = true;
         }
     }
+
+    // 2. PASANG PENGAMAT (EVENT LISTENER)
+    lokasiSelect.addEventListener('change', updatePetugasDropdown);
+
+    // 3. JALANKAN SAAT HALAMAN DIBUKA (untuk menangani old input)
+    updatePetugasDropdown();
     
     // Preview foto air
     document.getElementById('foto_air').addEventListener('change', function(e) {

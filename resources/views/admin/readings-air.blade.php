@@ -76,7 +76,7 @@
 
     <!-- tidak untuk deploy -->
      <!-- hanya untuk import data dari excel -->
-    <!-- <form action="{{ route('import.air') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+    <form action="{{ route('import.air') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
     @csrf
     <div>
         <label for="file_excel" class="block text-xs font-medium text-gray-700 mb-1">Upload Data (Excel)</label>
@@ -86,7 +86,7 @@
     <button type="submit" class="mt-5 bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-sm font-semibold transition-colors">
         <i class="fas fa-upload mr-1"></i> Import
     </button>
-</form> -->
+</form>
 <!-- tidak untuk deploy -->
 </div>
 
@@ -123,11 +123,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="text-blue-600 font-bold">meter: {{ $item->meter_akhir ?? '-' }}</div>
                                     <div class="text-green-600 font-semibold text-xs mt-1 border-t pt-1">M<sup>3</sup>: {{ $item->pemakaian ? number_format($item->pemakaian, 2) : '-' }}</div>
-                                    <div class="text-yellow-600 font-semibold text-xs mt-1 border-t pt-1">L/detik:  @if($item->pemakaian > 0)
-                                        {{ number_format(($item->pemakaian * 1000) / 86400, 2) }}
-                                        @else
-                                            0.00
-                                        @endif</div>
+                                    <div class="text-yellow-600 font-semibold text-xs mt-1 border-t pt-1">L/detik: {{ $item->liter_per_detik ?? '-' }}</div>
                                 </td>
                                 <td class="px-6 py-4">{{ $item->status_meter ?? '-' }}</td>
                                 <td class="px-6 py-4">{{ $item->petugas }}</td>

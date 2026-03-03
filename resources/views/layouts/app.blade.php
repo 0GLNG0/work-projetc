@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-startup-image" href="{{ asset('icons/logoPDAM.png') }}">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>@yield('title', 'Monitoring Meter')</title>
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -171,6 +176,11 @@
         @endif
 
         @yield('content')
+        <div id="install-banner" style="display: none; position: fixed; bottom: 20px; left: 20px; right: 20px; background: #007bff; color: white; padding: 15px; border-radius: 10px; z-index: 9999; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <p style="margin-bottom: 10px; font-weight: bold;">Install Aplikasi MeterSpot di HP kamu?</p>
+            <button id="btn-install" style="background: white; color: #007bff; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; margin-right: 10px;">INSTALL SEKARANG</button>
+            <button id="btn-close" style="background: transparent; color: white; border: 1px solid white; padding: 8px 15px; border-radius: 5px;">NANTI SAJA</button>
+        </div>
     </main>
 
     <!-- ========== FOOTER ========== -->
@@ -182,5 +192,44 @@
 
     <!-- SCRIPT TAMBAHAN -->
     @stack('scripts')
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
+    let deferredPrompt;
+    const installBanner = document.getElementById('install-banner');
+    const btnInstall = document.getElementById('btn-install');
+    const btnClose = document.getElementById('btn-close');
+
+    // 1. Tangkap kejadian "Siap di-install" dari Browser
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Cegah Chrome munculin prompt default yang ngebosenin
+        e.preventDefault();
+        // Simpan kejadiannya buat kita panggil pas tombol diklik
+        deferredPrompt = e;
+        // Munculkan banner buatan kita sendiri yang lebih keren
+        installBanner.style.display = 'block';
+    });
+
+    // 2. Logika saat tombol INSTALL diklik
+    btnInstall.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // Jalankan prompt instalasi
+            deferredPrompt.prompt();
+            // Cek apakah user setuju atau nolak
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // Hapus simpanan prompt kita
+            deferredPrompt = null;
+            // Sembunyikan banner
+            installBanner.style.display = 'none';
+        }
+    });
+
+    // 3. Logika tutup banner
+    btnClose.addEventListener('click', () => {
+        installBanner.style.display = 'none';
+    });
+</script>
 </body>
 </html>
