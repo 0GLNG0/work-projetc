@@ -230,6 +230,13 @@
     btnClose.addEventListener('click', () => {
         installBanner.style.display = 'none';
     });
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW Terdaftar!', reg))
+            .catch(err => console.error('SW Gagal Daftar. Errornya:', err));
+    } else {
+        console.log('Browser ini tidak dukung Service Worker');
+    }
 </script>
 </body>
 </html>
